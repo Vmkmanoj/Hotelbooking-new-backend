@@ -63,9 +63,10 @@ class PropertyService:
             state=property_data.state,
             country=property_data.country,
             postal_code=property_data.postal_code,
-            created_by=property_data.owner_id,
-            updated_by=property_data.owner_id,
+            created_by=str(property_data.owner_id),
+            updated_by=str(property_data.owner_id),
         )
+        
 
         property_obj = Property(
             owner_id=property_data.owner_id,
@@ -84,8 +85,8 @@ class PropertyService:
             check_out_time=property_data.check_out_time,
             status=PropertyStatus.PENDING,
             is_verified=False,
-            created_by=property_data.owner_id,
-            updated_by=property_data.owner_id,
+            created_by=str(property_data.owner_id),
+            updated_by=str(property_data.owner_id),
         )
 
         return await self.repo.create(

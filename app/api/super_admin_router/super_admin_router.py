@@ -2,6 +2,7 @@
 # Standard Library
 # ============================================================
 
+from app.dependencies.auth import get_current_user
 from typing import List
 from uuid import UUID
 
@@ -113,11 +114,13 @@ async def approve_property(
     service: SuperAdminPropertyService = Depends(
         get_super_admin_service,
     ),
+    current_user  = Depends(get_current_user) 
 ):
 
     return await service.approve_property(
         property_id,
         request,
+        current_user
     )
 
 

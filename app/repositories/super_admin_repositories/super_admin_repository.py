@@ -146,11 +146,13 @@ class SuperAdminPropertyRepository:
     ) -> Property:
         """
         Approve a property.
+
         """
+
         try:
             property.status = PropertyStatus.APPROVED
             property.is_verified = True
-            property.approved_by = admin_id
+            property.approved_by = str(admin_id.id)
             property.approved_at = datetime.now(timezone.utc)
 
             await self.db.commit()
