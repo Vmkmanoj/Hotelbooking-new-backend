@@ -2,6 +2,7 @@
 # Standard Library
 # ============================================================
 
+from app.models.review_models.review_model import Review
 from datetime import (
     datetime,
     time,
@@ -251,6 +252,13 @@ class Property(BaseTable):
     room_types = relationship(
         "RoomType",
         back_populates="property"
+    )
+
+
+    reviews: Mapped[list["Review"]] = relationship(
+        back_populates="property",
+        cascade="all, delete-orphan",
+        lazy="select",
     )
 
 

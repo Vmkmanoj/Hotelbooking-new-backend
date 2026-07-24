@@ -210,6 +210,25 @@ async def get_approved_properties(
     return await service.get_all_approved_property()
 
 
+
+@router.get("/property/all/onwers")
+async def getAllPropertyOnwers(
+    service: SuperAdminPropertyService = Depends(
+        get_super_admin_service,
+    ),
+):
+    return await service.getAllPropertyOwners()
+
+
+@router.get("/property/all/customers")
+async def getAllCustomers(
+    service: SuperAdminPropertyService = Depends(
+        get_super_admin_service,
+    ),
+):
+    return await service.getAllCustomers()
+
+
 # ============================================================
 # Delete Property
 # ============================================================

@@ -2,6 +2,7 @@
 # Standard Library
 # ============================================================
 
+from app.models.review_models.review_model import Review
 from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -155,6 +156,12 @@ class User(BaseTable):
         back_populates="customer",
         lazy="select",
     )
+
+    reviews: Mapped[list["Review"]] = relationship(
+    back_populates="customer",
+    cascade="all, delete-orphan",
+    lazy="select",
+)
 
     # # Customer payments
     # payments: Mapped[list["Payment"]] = relationship(

@@ -118,6 +118,24 @@ class SuperAdminPropertyRepository:
         except SQLAlchemyError:
             raise
 
+    async def get_approved_all_properties(self):
+        """
+        Retrieve all approved properties.
+
+        """
+        try:
+            result = await self.db.execute(
+                select(Property)
+                .where(
+                    Property.status == PropertyStatus.APPROVED
+                )
+            )
+
+            return result.scalars().all()
+
+        except SQLAlchemyError:
+            raise
+
     async def get_approved_properties(self):
         """
         Retrieve all approved properties.
