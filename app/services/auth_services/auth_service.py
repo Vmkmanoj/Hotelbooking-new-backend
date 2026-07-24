@@ -88,22 +88,12 @@ class AuthService:
             user.role_id,
         )
 
-        permissions = await self.repo.get_permissions_by_role(
-            role.id,
-        )
-
-        permission_list = [
-            permission.name
-            for permission in permissions
-        ]
 
         access_token = create_access_token(
             {
                 "sub": str(user.id),
                 "email": user.email,
-                "role": role.name,
-                "role_id": str(role.id),
-                "permissions": permission_list,
+                "role": role.name
             }
         )
 

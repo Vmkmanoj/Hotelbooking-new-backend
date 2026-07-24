@@ -17,11 +17,13 @@ from sqlalchemy import select
 from app.core.password import hash_password
 from app.database import AsyncSessionLocal
 
+# pyrefly: ignore [missing-import]
 from app.modules.users.models import (
     Role,
     User,
 )
 
+# pyrefly: ignore [missing-import]
 from app.modules.auth.auth_constants import (
     SUPER_ADMIN,
     PROPERTY_OWNER,

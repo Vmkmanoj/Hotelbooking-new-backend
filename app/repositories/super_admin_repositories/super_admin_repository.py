@@ -118,6 +118,24 @@ class SuperAdminPropertyRepository:
         except SQLAlchemyError:
             raise
 
+    async def get_approved_all_properties(self):
+        """
+        Retrieve all approved properties.
+
+        """
+        try:
+            result = await self.db.execute(
+                select(Property)
+                .where(
+                    Property.status == PropertyStatus.APPROVED
+                )
+            )
+
+            return result.scalars().all()
+
+        except SQLAlchemyError:
+            raise
+
     async def get_approved_properties(self):
         """
         Retrieve all approved properties.
@@ -146,11 +164,13 @@ class SuperAdminPropertyRepository:
     ) -> Property:
         """
         Approve a property.
+
         """
+
         try:
             property.status = PropertyStatus.APPROVED
             property.is_verified = True
-            property.approved_by = admin_id
+            property.approved_by = str(admin_id.id)
             property.approved_at = datetime.now(timezone.utc)
 
             await self.db.commit()

@@ -9,6 +9,7 @@ from uuid import UUID
 # ============================================================
 
 from fastapi import HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # ============================================================
@@ -20,6 +21,8 @@ from app.common.enums.property_enums.property_status import (
 )
 
 from app.models.property_models.property import Property
+from app.models.users_models.users import User
+from app.models.permissions_models.roles import Role
 
 from app.repositories.super_admin_repositories.super_admin_repository import (
     SuperAdminPropertyRepository,
@@ -47,7 +50,7 @@ class SuperAdminPropertyService:
         self,
         db: AsyncSession,
     ):
-
+        self.db = db
         self.repo = SuperAdminPropertyRepository(db)
 
     # ========================================================
@@ -68,7 +71,7 @@ class SuperAdminPropertyService:
         self,
     ):
 
-        properties = await self.repo.get_approve_property()
+        properties = await self.repo.get_approved_properties()
 
         if not properties:
             raise HTTPException(
@@ -279,3 +282,40 @@ class SuperAdminPropertyService:
             success=True,
             message="Property deleted successfully.",
         )
+
+
+    async def getAllCustomers(self):
+        result = await self.db.execute(
+            select(User)
+            .join(Role, User.role_id == Role.id)
+            .where(Role.name == "CUSTOMER")
+        )
+
+        customers = result.scalars().all()
+
+        if not customers:
+            raise HTTPException(
+                status_code=404,
+                detail="Customers not found"
+            )
+
+        return customers
+
+
+    async def getAllPropertyOwners(self):
+        result = await self.db.execute(
+            select(User)
+            .join(Role, User.role_id == Role.id)
+            .where(Role.name == "PROPERTY_OWNER")
+        )
+
+        property_owners = result.scalars().all()
+
+        if not property_owners:
+            raise HTTPException(
+                status_code=404,
+                detail="Property owners not found"
+            )
+
+        return property_owners
+    

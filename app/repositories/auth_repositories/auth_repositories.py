@@ -57,6 +57,27 @@ class AuthRepository:
         )
 
         return result.scalar_one_or_none()
+
+
+    # async def get_by_email_id(
+    #     self,
+    #     id: str,
+    # ) -> User | None:
+    #     """
+    #     Retrieve a user by email id.
+    #     """
+
+    #     result = await self.db.execute(
+    #         select(User).
+    #         where(
+    #             User.id == id,
+    #         )
+    #     )
+
+    
+    #     return result.scalar_one_or_none()
+
+
     async def get_user_by_email(
         self,
         email: str,

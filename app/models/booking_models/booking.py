@@ -2,6 +2,7 @@
 # Standard Library
 # ============================================================
 
+from app.models.review_models.review_model import Review
 from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING
@@ -196,4 +197,11 @@ class Booking(BaseTable):
         back_populates="booking",
         uselist=False,
         cascade="all, delete-orphan",
+    )
+
+
+    review: Mapped["Review"] = relationship(
+        back_populates="booking",
+        uselist=False,
+        lazy="select",
     )

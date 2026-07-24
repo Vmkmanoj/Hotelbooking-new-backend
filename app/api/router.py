@@ -68,6 +68,9 @@ from app.api.rooms_router.room_amenity_router import (
     router as room_amenity_router,
 )
 
+from app.api.review_router.review_router import (router as review_router)
+
+
 # ============================================================
 # Main API Router
 # ============================================================
@@ -128,3 +131,10 @@ api_router.include_router(dashboard_router)
 # ============================================================
 
 api_router.include_router(super_admin_router)
+
+
+# ============================================================
+# Review Module
+# ============================================================
+
+api_router.include_router(review_router)
