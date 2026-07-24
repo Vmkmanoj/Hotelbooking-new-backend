@@ -26,7 +26,7 @@ config = context.config
 
 config.set_main_option(
     "sqlalchemy.url",
-    settings.ALEMBIC_DATABASE_URL,
+    settings.ALEMBIC_DATABASE_URL.replace("%", "%%"),
 )
 
 if config.config_file_name is not None:

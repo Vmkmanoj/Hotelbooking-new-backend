@@ -39,6 +39,7 @@ def create_access_token(data: dict[str, Any]) -> str:
     )
 
     to_encode = data.copy()
+    
     to_encode.update(
         {
             "type": ACCESS_TOKEN_TYPE,

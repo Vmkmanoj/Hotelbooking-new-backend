@@ -3,6 +3,9 @@
 # ============================================================
 
 
+from app.models.permissions_models.roles_permission import RolePermission
+from app.models.permissions_models.permissions import Permission
+from sqlalchemy import select
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -49,3 +52,34 @@ async def get_current_user(
                 )
 
     return user
+
+
+# ============================================================
+# Require Permission Dependency
+# ============================================================
+
+def require_permission(permission_name: str):
+    async def permission_checker(
+        current_user=Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
+    ):
+        result = await db.execute(
+            select(Permission.name)
+            .join(
+                RolePermission,
+                Permission.id == RolePermission.permission_id,
+            )
+            .where(RolePermission.role_id == current_user.role_id)
+        )
+
+        permissions = result.scalars().all()
+
+        if permission_name not in permissions:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to perform this action.",
+            )
+
+        return current_user
+
+    return permission_checker
