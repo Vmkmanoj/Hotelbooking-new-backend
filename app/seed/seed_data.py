@@ -38,68 +38,130 @@ PERMISSIONS = [
 ]
 
 ROLE_PERMISSIONS = {
-    "SUPER_ADMIN": None,  # None means every permission.
+    "SUPER_ADMIN": None,  # None = assign every permission
     "PROPERTY_OWNER": {
-        "property.create", "property.update", "property.view",
-        "room.create", "room.update", "room.delete", "room.view",
-        "booking.view", "booking.checkin", "booking.checkout",
-        "payment.view", "review.create",
+        "property.create",
+        "property.update",
+        "property.view",
+        "room.create",
+        "room.update",
+        "room.delete",
+        "room.view",
+        "booking.view",
+        "booking.checkin",
+        "booking.checkout",
+        "payment.view",
+        "review.create",
     },
     "CUSTOMER": {
-        "property.view", "room.view", "booking.create", "booking.view",
-        "booking.cancel", "payment.view", "review.create",
+        "property.view",
+        "room.view",
+        "booking.create",
+        "booking.view",
+        "booking.cancel",
+        "payment.view",
+        "review.create",
     },
 }
 
 
 async def seed_database(db: AsyncSession) -> None:
-    """Create the default roles, permissions, and role mappings if absent."""
+    """
+    Seed default Roles, Permissions and Role-Permission mappings.
+
+    Safe to execute multiple times because existing records
+    are skipped.
+    """
+
     try:
+
+        # -------------------------------------------------------
+        # Existing Roles
+        # -------------------------------------------------------
+
         existing_roles = {
             role.name: role
-            for role in (await db.execute(select(Role))).scalars()
+            for role in (
+                await db.execute(select(Role))
+            ).scalars().all()
         }
+
         for name, description in ROLES:
             if name not in existing_roles:
-                role = Role(name=name, description=description)
+                role = Role(
+                    name=name,
+                    description=description,
+                )
                 db.add(role)
                 existing_roles[name] = role
 
+        # -------------------------------------------------------
+        # Existing Permissions
+        # -------------------------------------------------------
+
         existing_permissions = {
             permission.name: permission
-            for permission in (await db.execute(select(Permission))).scalars()
+            for permission in (
+                await db.execute(select(Permission))
+            ).scalars().all()
         }
-        for name, modules, description in PERMISSIONS:
+
+        for name, module, description in PERMISSIONS:
             if name not in existing_permissions:
                 permission = Permission(
                     name=name,
-                    modules=modules,
+                    module=module,
                     description=description,
                 )
                 db.add(permission)
                 existing_permissions[name] = permission
 
-        # Assign IDs to newly-created rows before creating role-permission links.
+        # Generate IDs for newly added Roles & Permissions
         await db.flush()
 
+        # -------------------------------------------------------
+        # Existing Role-Permission Mappings
+        # -------------------------------------------------------
+
         existing_links = {
-            (link.rolesId, link.permission_id)
-            for link in (await db.execute(select(RolePermission))).scalars()
+            (link.role_id, link.permission_id)
+            for link in (
+                await db.execute(select(RolePermission))
+            ).scalars().all()
         }
+
         for role_name, permission_names in ROLE_PERMISSIONS.items():
+
             role = existing_roles[role_name]
-            names = existing_permissions.keys() if permission_names is None else permission_names
+
+            names = (
+                existing_permissions.keys()
+                if permission_names is None
+                else permission_names
+            )
+
             for permission_name in names:
+
                 permission = existing_permissions[permission_name]
-                link_key = (role.id, permission.id)
+
+                link_key = (
+                    role.id,
+                    permission.id,
+                )
+
                 if link_key not in existing_links:
-                    db.add(RolePermission(
-                        rolesId=role.id,
-                        permission_id=permission.id,
-                    ))
+
+                    db.add(
+                        RolePermission(
+                            role_id=role.id,
+                            permission_id=permission.id,
+                        )
+                    )
+
                     existing_links.add(link_key)
 
         await db.commit()
+
     except Exception:
         await db.rollback()
         raise

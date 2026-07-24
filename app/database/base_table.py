@@ -56,13 +56,13 @@ class BaseTable(Base):
     # Audit Fields
     # ============================================================
 
-    created_by: Mapped[String | None] = mapped_column(
+    created_by: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
         index=True,
     )
 
-    updated_by: Mapped[String | None] = mapped_column(
+    updated_by: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
         index=True,

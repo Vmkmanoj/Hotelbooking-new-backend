@@ -263,8 +263,8 @@ class BookingService:
                 booking_status=BookingStatus.PENDING,
                 payment_status=PaymentStatus.PENDING,
                 special_requests=request.special_requests,
-                created_by=current_user.id,
-                updated_by=current_user.id,
+                created_by=current_user.email,
+                updated_by=current_user.email,
             )
 
             # ============================================================
@@ -290,8 +290,8 @@ class BookingService:
                         price_per_night=room.room_type.base_price,
                         number_of_nights=number_of_nights,
                         room_total=room.room_type.base_price * number_of_nights,
-                        created_by=current_user.id,
-                        updated_by=current_user.id,
+                        created_by=current_user.email,
+                        updated_by=current_user.email,
                     )
                 )
 
@@ -308,8 +308,8 @@ class BookingService:
                 booking_status=BookingStatus.PENDING,
                 changed_by=current_user.id,
                 remarks="Booking created.",
-                created_by=current_user.id,
-                updated_by=current_user.id,
+                created_by=current_user.email,
+                updated_by=current_user.email,
             )
 
             await self.repo.create_booking_history(
@@ -557,8 +557,8 @@ class BookingService:
                 refund_status=RefundStatus.PENDING,
                 refund_amount=Decimal("0.00"),
                 cancelled_by=current_user.id,
-                created_by=current_user.id,
-                updated_by=current_user.id,
+                created_by=current_user.email,
+                updated_by=current_user.email,
             )
 
             await self.repo.create_booking_cancellation(
@@ -574,8 +574,8 @@ class BookingService:
                 booking_status=BookingStatus.CANCELLED,
                 changed_by=current_user.id,
                 remarks=request.reason,
-                created_by=current_user.id,
-                updated_by=current_user.id,
+                created_by=current_user.email,
+                updated_by=current_user.email,
             )
 
             await self.repo.create_booking_history(
