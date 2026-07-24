@@ -12,6 +12,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import (
     DateTime,
     func,
+    String
 )
 
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -55,14 +56,14 @@ class BaseTable(Base):
     # Audit Fields
     # ============================================================
 
-    created_by: Mapped[UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True),
+    created_by: Mapped[String | None] = mapped_column(
+        String(100),
         nullable=True,
         index=True,
     )
 
-    updated_by: Mapped[UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True),
+    updated_by: Mapped[String | None] = mapped_column(
+        String(100),
         nullable=True,
         index=True,
     )

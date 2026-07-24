@@ -19,7 +19,7 @@ class CustomerRegister(BaseModel):
     Customer registration request.
     """
 
-    user_name: str = Field(
+    userName: str = Field(
         min_length=3,
         max_length=100,
     )

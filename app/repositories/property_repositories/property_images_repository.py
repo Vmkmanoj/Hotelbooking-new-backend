@@ -17,9 +17,14 @@ class PropertyImageRepository:
     Repository responsible for Property Image database operations.
     """
 
-    @staticmethod
-    async def create(
+    def __init__(
+        self,
         db: AsyncSession,
+    ):
+        self.db = db
+
+    async def create(
+        self,
         property_image_data: PropertyImageCreate,
     ) -> PropertyImage:
         """
@@ -30,27 +35,26 @@ class PropertyImageRepository:
                 **property_image_data.model_dump()
             )
 
-            db.add(property_image)
+            self.db.add(property_image)
 
-            await db.commit()
-            await db.refresh(property_image)
+            await self.db.commit()
+            await self.db.refresh(property_image)
 
             return property_image
 
         except SQLAlchemyError:
-            await db.rollback()
+            await self.db.rollback()
             raise
 
-    @staticmethod
     async def get_by_id(
-        db: AsyncSession,
+        self,
         image_id: UUID,
     ) -> PropertyImage | None:
         """
         Retrieve a property image by ID.
         """
         try:
-            result = await db.execute(
+            result = await self.db.execute(
                 select(PropertyImage).where(
                     PropertyImage.id == image_id
                 )
@@ -61,16 +65,15 @@ class PropertyImageRepository:
         except SQLAlchemyError:
             raise
 
-    @staticmethod
     async def get_by_property_id(
-        db: AsyncSession,
+        self,
         property_id: UUID,
     ) -> list[PropertyImage]:
         """
         Retrieve all images of a property ordered by display order.
         """
         try:
-            result = await db.execute(
+            result = await self.db.execute(
                 select(PropertyImage)
                 .where(
                     PropertyImage.property_id == property_id
@@ -83,16 +86,15 @@ class PropertyImageRepository:
         except SQLAlchemyError:
             raise
 
-    @staticmethod
     async def get_primary_image(
-        db: AsyncSession,
+        self,
         property_id: UUID,
     ) -> PropertyImage | None:
         """
         Retrieve the primary image of a property.
         """
         try:
-            result = await db.execute(
+            result = await self.db.execute(
                 select(PropertyImage).where(
                     PropertyImage.property_id == property_id,
                     PropertyImage.is_primary.is_(True),
@@ -104,16 +106,15 @@ class PropertyImageRepository:
         except SQLAlchemyError:
             raise
 
-    @staticmethod
     async def get_cover_image(
-        db: AsyncSession,
+        self,
         property_id: UUID,
     ) -> PropertyImage | None:
         """
         Retrieve the cover image of a property.
         """
         try:
-            result = await db.execute(
+            result = await self.db.execute(
                 select(PropertyImage).where(
                     PropertyImage.property_id == property_id,
                     PropertyImage.is_cover.is_(True),
@@ -125,15 +126,14 @@ class PropertyImageRepository:
         except SQLAlchemyError:
             raise
 
-    @staticmethod
     async def get_all(
-        db: AsyncSession,
+        self,
     ) -> list[PropertyImage]:
         """
         Retrieve all property images.
         """
         try:
-            result = await db.execute(
+            result = await self.db.execute(
                 select(PropertyImage)
             )
 
@@ -142,9 +142,8 @@ class PropertyImageRepository:
         except SQLAlchemyError:
             raise
 
-    @staticmethod
     async def update(
-        db: AsyncSession,
+        self,
         property_image: PropertyImage,
         property_image_data: PropertyImageUpdate,
     ) -> PropertyImage:
@@ -159,13 +158,13 @@ class PropertyImageRepository:
             for key, value in update_data.items():
                 setattr(property_image, key, value)
 
-            await db.commit()
-            await db.refresh(property_image)
+            await self.db.commit()
+            await self.db.refresh(property_image)
 
             return property_image
 
         except SQLAlchemyError:
-            await db.rollback()
+            await self.db.rollback()
             raise
 
     # Optional

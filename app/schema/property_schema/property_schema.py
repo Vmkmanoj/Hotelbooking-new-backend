@@ -61,7 +61,7 @@ class PropertyBase(BaseModel):
 
     cancellation_policy: str | None = None
 
-    house_rules: dict[str, str] | None = None
+    house_rules: dict[str, bool] | None = None
 
     child_policy: str | None = None
 
@@ -87,6 +87,8 @@ class PropertyCreate(PropertyBase):
     owner_id is intentionally omitted.
     It will be taken from the authenticated JWT user.
     """
+
+    owner_id: UUID
 
     address_line_1: str = Field(
         min_length=3,

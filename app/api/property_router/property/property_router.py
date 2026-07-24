@@ -46,7 +46,7 @@ router = APIRouter(
 # ============================================================
 
 @router.post(
-    "",
+    "/create",
     response_model=PropertyResponse,
     status_code=status.HTTP_201_CREATED,
 )

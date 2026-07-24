@@ -17,37 +17,50 @@ class AddressRepository:
     Repository responsible for Address database operations.
     """
 
-    @staticmethod
-    async def create(
+    def __init__(
+        self,
         db: AsyncSession,
+    ):
+        self.db = db
+
+    async def create(
+        self,
         address_data: AddressCreate,
     ) -> Address:
         """
         Create a new address.
         """
         try:
-            address = Address(**address_data.model_dump())
+            address = Address(
+                address_line_1=address_data.address_line_1,
+                address_line_2=address_data.address_line_2,
+                city=address_data.city,
+                state=address_data.state,
+                country=address_data.country,
+                pincode=address_data.pincode,
+                updated_by=address_data.owner_id,
+                created_by=address_data.owner_id,
+            )
 
-            db.add(address)
+            self.db.add(address)
 
-            await db.commit()
-            await db.refresh(address)
+            await self.db.commit()
+            await self.db.refresh(address)
 
             return address
 
         except SQLAlchemyError:
-            await db.rollback()
+            await self.db.rollback()
             raise
 
-    @staticmethod
     async def get_all(
-        db: AsyncSession,
+        self,
     ) -> list[Address]:
         """
         Retrieve all addresses.
         """
         try:
-            result = await db.execute(
+            result = await self.db.execute(
                 select(Address)
             )
 
@@ -56,16 +69,15 @@ class AddressRepository:
         except SQLAlchemyError:
             raise
 
-    @staticmethod
     async def get_by_id(
-        db: AsyncSession,
+        self,
         address_id: UUID,
     ) -> Address | None:
         """
         Retrieve an address by ID.
         """
         try:
-            result = await db.execute(
+            result = await self.db.execute(
                 select(Address).where(
                     Address.id == address_id
                 )
@@ -76,9 +88,8 @@ class AddressRepository:
         except SQLAlchemyError:
             raise
 
-    @staticmethod
     async def update(
-        db: AsyncSession,
+        self,
         address: Address,
         address_data: AddressUpdate,
     ) -> Address:
@@ -93,13 +104,13 @@ class AddressRepository:
             for key, value in update_data.items():
                 setattr(address, key, value)
 
-            await db.commit()
-            await db.refresh(address)
+            await self.db.commit()
+            await self.db.refresh(address)
 
             return address
 
         except SQLAlchemyError:
-            await db.rollback()
+            await self.db.rollback()
             raise
 
     # Optional: keep delete if business requires it.

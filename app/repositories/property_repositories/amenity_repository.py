@@ -17,9 +17,14 @@ class AmenityRepository:
     Repository responsible for Amenity database operations.
     """
 
-    @staticmethod
-    async def create(
+    def __init__(
+        self,
         db: AsyncSession,
+    ):
+        self.db = db
+
+    async def create(
+        self,
         amenity_data: AmenityCreate,
     ) -> Amenity:
         """
@@ -30,27 +35,26 @@ class AmenityRepository:
                 **amenity_data.model_dump()
             )
 
-            db.add(amenity)
+            self.db.add(amenity)
 
-            await db.commit()
-            await db.refresh(amenity)
+            await self.db.commit()
+            await self.db.refresh(amenity)
 
             return amenity
 
         except SQLAlchemyError:
-            await db.rollback()
+            await self.db.rollback()
             raise
 
-    @staticmethod
     async def get_by_id(
-        db: AsyncSession,
+        self,
         amenity_id: UUID,
     ) -> Amenity | None:
         """
         Retrieve an amenity by its ID.
         """
         try:
-            result = await db.execute(
+            result = await self.db.execute(
                 select(Amenity).where(
                     Amenity.id == amenity_id
                 )
@@ -61,16 +65,15 @@ class AmenityRepository:
         except SQLAlchemyError:
             raise
 
-    @staticmethod
     async def get_by_name(
-        db: AsyncSession,
+        self,
         name: str,
     ) -> Amenity | None:
         """
         Retrieve an amenity by name.
         """
         try:
-            result = await db.execute(
+            result = await self.db.execute(
                 select(Amenity).where(
                     Amenity.name == name
                 )
@@ -81,15 +84,14 @@ class AmenityRepository:
         except SQLAlchemyError:
             raise
 
-    @staticmethod
     async def get_all(
-        db: AsyncSession,
+        self,
     ) -> list[Amenity]:
         """
         Retrieve all amenities.
         """
         try:
-            result = await db.execute(
+            result = await self.db.execute(
                 select(Amenity)
                 .order_by(Amenity.name)
             )
@@ -99,9 +101,8 @@ class AmenityRepository:
         except SQLAlchemyError:
             raise
 
-    @staticmethod
     async def update(
-        db: AsyncSession,
+        self,
         amenity: Amenity,
         amenity_data: AmenityUpdate,
     ) -> Amenity:
@@ -116,13 +117,13 @@ class AmenityRepository:
             for key, value in update_data.items():
                 setattr(amenity, key, value)
 
-            await db.commit()
-            await db.refresh(amenity)
+            await self.db.commit()
+            await self.db.refresh(amenity)
 
             return amenity
 
         except SQLAlchemyError:
-            await db.rollback()
+            await self.db.rollback()
             raise
 
     # Optional

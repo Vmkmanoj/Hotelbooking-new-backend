@@ -19,9 +19,14 @@ class PropertyAmenityRepository:
     Repository responsible for Property-Amenity mapping operations.
     """
 
-    @staticmethod
-    async def create(
+    def __init__(
+        self,
         db: AsyncSession,
+    ):
+        self.db = db
+
+    async def create(
+        self,
         property_amenity_data: PropertyAmenityCreate,
     ) -> PropertyAmenity:
         """
@@ -32,27 +37,26 @@ class PropertyAmenityRepository:
                 **property_amenity_data.model_dump()
             )
 
-            db.add(property_amenity)
+            self.db.add(property_amenity)
 
-            await db.commit()
-            await db.refresh(property_amenity)
+            await self.db.commit()
+            await self.db.refresh(property_amenity)
 
             return property_amenity
 
         except SQLAlchemyError:
-            await db.rollback()
+            await self.db.rollback()
             raise
 
-    @staticmethod
     async def get_by_id(
-        db: AsyncSession,
+        self,
         property_amenity_id: UUID,
     ) -> PropertyAmenity | None:
         """
         Retrieve a property-amenity mapping by ID.
         """
         try:
-            result = await db.execute(
+            result = await self.db.execute(
                 select(PropertyAmenity).where(
                     PropertyAmenity.id == property_amenity_id
                 )
@@ -63,9 +67,8 @@ class PropertyAmenityRepository:
         except SQLAlchemyError:
             raise
 
-    @staticmethod
     async def get_by_property_and_amenity(
-        db: AsyncSession,
+        self,
         property_id: UUID,
         amenity_id: UUID,
     ) -> PropertyAmenity | None:
@@ -73,7 +76,7 @@ class PropertyAmenityRepository:
         Retrieve a mapping using property and amenity IDs.
         """
         try:
-            result = await db.execute(
+            result = await self.db.execute(
                 select(PropertyAmenity).where(
                     PropertyAmenity.property_id == property_id,
                     PropertyAmenity.amenity_id == amenity_id,
@@ -85,15 +88,14 @@ class PropertyAmenityRepository:
         except SQLAlchemyError:
             raise
 
-    @staticmethod
     async def get_all(
-        db: AsyncSession,
+        self,
     ) -> list[PropertyAmenity]:
         """
         Retrieve all property-amenity mappings.
         """
         try:
-            result = await db.execute(
+            result = await self.db.execute(
                 select(PropertyAmenity)
             )
 
@@ -102,9 +104,8 @@ class PropertyAmenityRepository:
         except SQLAlchemyError:
             raise
 
-    @staticmethod
     async def update(
-        db: AsyncSession,
+        self,
         property_amenity: PropertyAmenity,
         property_amenity_data: PropertyAmenityUpdate,
     ) -> PropertyAmenity:
@@ -119,29 +120,14 @@ class PropertyAmenityRepository:
             for key, value in update_data.items():
                 setattr(property_amenity, key, value)
 
-            await db.commit()
-            await db.refresh(property_amenity)
+            await self.db.commit()
+            await self.db.refresh(property_amenity)
 
             return property_amenity
 
         except SQLAlchemyError:
-            await db.rollback()
+            await self.db.rollback()
             raise
-
-    async def get_by_property_and_amenity(
-        self,
-        property_id: UUID,
-        amenity_id: UUID,
-    ) -> PropertyAmenity | None:
-
-        result = await self.db.execute(
-            select(PropertyAmenity).where(
-                PropertyAmenity.property_id == property_id,
-                PropertyAmenity.amenity_id == amenity_id,
-            )
-        )
-
-        return result.scalar_one_or_none()
 
     # Optional
     # @staticmethod
