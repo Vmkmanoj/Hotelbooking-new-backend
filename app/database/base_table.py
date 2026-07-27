@@ -56,14 +56,14 @@ class BaseTable(Base):
     # Audit Fields
     # ============================================================
 
-    created_by: Mapped[str | None] = mapped_column(
-        String(100),
+    created_by: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
         nullable=True,
         index=True,
     )
 
-    updated_by: Mapped[str | None] = mapped_column(
-        String(100),
+    updated_by: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
         nullable=True,
         index=True,
     )

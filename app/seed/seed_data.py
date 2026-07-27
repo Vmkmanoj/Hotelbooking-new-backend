@@ -1,10 +1,11 @@
+import asyncio
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.database import AsyncSessionLocal
 from app.models.permissions_models.permissions import Permission
 from app.models.permissions_models.roles import Role
 from app.models.permissions_models.roles_permission import RolePermission
-
 
 ROLES = [
     ("SUPER_ADMIN", "Platform Owner"),
@@ -69,11 +70,11 @@ async def seed_database(db: AsyncSession) -> None:
             permission.name: permission
             for permission in (await db.execute(select(Permission))).scalars()
         }
-        for name, modules, description in PERMISSIONS:
+        for name, module, description in PERMISSIONS:
             if name not in existing_permissions:
                 permission = Permission(
                     name=name,
-                    modules=modules,
+                    module=module,
                     description=description,
                 )
                 db.add(permission)
@@ -83,7 +84,7 @@ async def seed_database(db: AsyncSession) -> None:
         await db.flush()
 
         existing_links = {
-            (link.rolesId, link.permission_id)
+            (link.role_id, link.permission_id)
             for link in (await db.execute(select(RolePermission))).scalars()
         }
         for role_name, permission_names in ROLE_PERMISSIONS.items():
@@ -94,7 +95,7 @@ async def seed_database(db: AsyncSession) -> None:
                 link_key = (role.id, permission.id)
                 if link_key not in existing_links:
                     db.add(RolePermission(
-                        rolesId=role.id,
+                        role_id=role.id,
                         permission_id=permission.id,
                     ))
                     existing_links.add(link_key)
@@ -103,3 +104,13 @@ async def seed_database(db: AsyncSession) -> None:
     except Exception:
         await db.rollback()
         raise
+
+
+async def main():
+    async with AsyncSessionLocal() as db:
+        await seed_database(db)
+        print("Database seeded successfully!")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

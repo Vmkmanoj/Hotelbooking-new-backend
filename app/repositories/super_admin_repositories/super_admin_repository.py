@@ -289,3 +289,14 @@ class SuperAdminPropertyRepository:
         )
 
         return result.scalar_one_or_none()
+
+    async def get_all_property(self) -> list[Property] | None:
+        
+        result = await self.db.execute(
+            select(Property)
+        )
+
+        properties = result.scalars().all()
+        return properties
+
+        

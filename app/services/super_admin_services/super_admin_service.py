@@ -2,6 +2,7 @@
 # Standard Library
 # ============================================================
 
+from app.schema.user_schema.user import getUser
 from uuid import UUID
 
 # ============================================================
@@ -43,6 +44,7 @@ from app.schema.super_admin_schema.super_admin_property_schema import (
 # ============================================================
 # Super Admin Property Service
 # ============================================================
+
 
 class SuperAdminPropertyService:
 
@@ -294,13 +296,18 @@ class SuperAdminPropertyService:
         customers = result.scalars().all()
 
         if not customers:
-            raise HTTPException(
-                status_code=404,
-                detail="Customers not found"
+            raise HTTPException(status_code=404, detail="Customers not found")
+
+        return [
+            getUser(
+                email=cus.email,
+                first_name=cus.first_name,
+                last_name=cus.last_name,
+                phone=cus.phone,
+                last_login_at=cus.last_login_at,
             )
-
-        return customers
-
+            for cus in customers
+        ]
 
     async def getAllPropertyOwners(self):
         result = await self.db.execute(
@@ -312,10 +319,12 @@ class SuperAdminPropertyService:
         property_owners = result.scalars().all()
 
         if not property_owners:
-            raise HTTPException(
-                status_code=404,
-                detail="Property owners not found"
-            )
+            raise HTTPException(status_code=404, detail="Property owners not found")
 
         return property_owners
-    
+
+    async def getAllProperty(self):
+        
+        result = await self.repo.get_all_property()
+
+        return result

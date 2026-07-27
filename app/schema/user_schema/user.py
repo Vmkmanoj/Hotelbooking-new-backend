@@ -120,3 +120,17 @@ class UserResponse(UserBase):
     model_config = ConfigDict(
         from_attributes=True,
     )
+
+
+class getUser(BaseModel):
+    email : str
+    first_name : str
+    last_name : str
+    phone : str
+    last_login_at : str
+
+
+class getProperty(BaseModel):
+    email : str
+    phone : str
+    propertyName : str
