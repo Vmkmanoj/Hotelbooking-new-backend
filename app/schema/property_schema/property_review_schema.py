@@ -2,7 +2,6 @@
 # Standard Library
 # ============================================================
 
-from datetime import datetime
 from uuid import UUID
 
 # ============================================================
@@ -12,63 +11,57 @@ from uuid import UUID
 from pydantic import (
     BaseModel,
     ConfigDict,
+    Field,
 )
 
 # ============================================================
-# Room Amenity Base
+# Approve Property
 # ============================================================
 
-class RoomAmenityBase(BaseModel):
+class PropertyApproveRequest(BaseModel):
     """
-    Maps amenities to a Room Type.
+    Property approval request.
+
+    Remarks are optional.
     """
 
-    room_type_id: UUID
-
-    amenity_id: UUID
-
-
-# ============================================================
-# Create
-# ============================================================
-
-class RoomAmenityCreate(RoomAmenityBase):
-
-    model_config = ConfigDict(
-        from_attributes=True,
+    approval_remarks: str | None = Field(
+        default=None,
+        max_length=500,
     )
 
 
 # ============================================================
-# Update
+# Reject Property
 # ============================================================
 
-class RoomAmenityUpdate(BaseModel):
+class PropertyRejectRequest(BaseModel):
+    """
+    Property rejection request.
 
-    room_type_id: UUID | None = None
+    Remarks are mandatory.
+    """
 
-    amenity_id: UUID | None = None
-
-    model_config = ConfigDict(
-        from_attributes=True,
+    approval_remarks: str = Field(
+        min_length=5,
+        max_length=500,
     )
 
 
 # ============================================================
-# Response
+# Review Response
 # ============================================================
 
-class RoomAmenityResponse(RoomAmenityBase):
+class PropertyReviewResponse(BaseModel):
+    """
+    Response after approving/rejecting a property.
+    """
 
-    id: UUID
+    success: bool
 
-    created_by: str | None = None
+    message: str
 
-    updated_by: str | None = None
-
-    created_at: datetime
-
-    updated_at: datetime
+    property_id: UUID
 
     model_config = ConfigDict(
         from_attributes=True,

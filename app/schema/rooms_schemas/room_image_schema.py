@@ -18,25 +18,23 @@ from pydantic import (
 # ============================================================
 # Room Image Base
 # ============================================================
-
 class RoomImageBase(BaseModel):
-    """
-    Base schema for room images.
-    """
-
-    room_id: UUID
-
     image_url: str = Field(
         min_length=5,
         max_length=500,
     )
 
-    image_name: str | None = Field(
+    caption: str | None = Field(
         default=None,
         max_length=255,
     )
 
-    is_primary: bool = False
+    display_order: int = Field(
+        default=1,
+        ge=1,
+    )
+
+    is_cover: bool = False
 
 
 # ============================================================
@@ -44,9 +42,6 @@ class RoomImageBase(BaseModel):
 # ============================================================
 
 class RoomImageCreate(RoomImageBase):
-    """
-    Upload a room image.
-    """
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -58,9 +53,6 @@ class RoomImageCreate(RoomImageBase):
 # ============================================================
 
 class RoomImageUpdate(BaseModel):
-    """
-    Update room image details.
-    """
 
     image_url: str | None = Field(
         default=None,
@@ -68,12 +60,17 @@ class RoomImageUpdate(BaseModel):
         max_length=500,
     )
 
-    image_name: str | None = Field(
+    caption: str | None = Field(
         default=None,
         max_length=255,
     )
 
-    is_primary: bool | None = None
+    display_order: int | None = Field(
+        default=None,
+        ge=1,
+    )
+
+    is_cover: bool | None = None
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -85,15 +82,14 @@ class RoomImageUpdate(BaseModel):
 # ============================================================
 
 class RoomImageResponse(RoomImageBase):
-    """
-    Room image response.
-    """
 
     id: UUID
 
-    created_by: UUID | None = None
+    room_type_id: UUID
 
-    updated_by: UUID | None = None
+    created_by: str |None = None
+
+    updated_by: str | None = None
 
     created_at: datetime
 

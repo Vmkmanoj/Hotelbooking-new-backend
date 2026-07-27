@@ -2,9 +2,9 @@
 # Standard Library
 # ============================================================
 
+from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
-from datetime import datetime
 
 # ============================================================
 # Third Party
@@ -27,7 +27,7 @@ class RoomTypeBase(BaseModel):
 
     property_id: UUID
 
-    name: str = Field(
+    room_name: str = Field(
         min_length=2,
         max_length=150,
     )
@@ -37,16 +37,19 @@ class RoomTypeBase(BaseModel):
         max_length=500,
     )
 
-    max_occupancy: int = Field(
+    max_adults: int = Field(
         ge=1,
-        le=20,
+    )
+
+    max_children: int = Field(
+        ge=0,
     )
 
     base_price: Decimal = Field(
         gt=0,
     )
 
-    size_sqm: Decimal | None = Field(
+    room_size_sqm: Decimal | None = Field(
         default=None,
         gt=0,
     )
@@ -71,7 +74,7 @@ class RoomTypeCreate(RoomTypeBase):
 
 class RoomTypeUpdate(BaseModel):
 
-    name: str | None = Field(
+    room_name: str | None = Field(
         default=None,
         min_length=2,
         max_length=150,
@@ -82,10 +85,14 @@ class RoomTypeUpdate(BaseModel):
         max_length=500,
     )
 
-    max_occupancy: int | None = Field(
+    max_adults: int | None = Field(
         default=None,
         ge=1,
-        le=20,
+    )
+
+    max_children: int | None = Field(
+        default=None,
+        ge=0,
     )
 
     base_price: Decimal | None = Field(
@@ -93,7 +100,7 @@ class RoomTypeUpdate(BaseModel):
         gt=0,
     )
 
-    size_sqm: Decimal | None = Field(
+    room_size_sqm: Decimal | None = Field(
         default=None,
         gt=0,
     )
@@ -113,9 +120,9 @@ class RoomTypeResponse(RoomTypeBase):
 
     id: UUID
 
-    created_by: UUID | None = None
+    created_by: str | None = None
 
-    updated_by: UUID | None = None
+    updated_by: str | None = None
 
     created_at: datetime
 

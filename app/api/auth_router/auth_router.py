@@ -40,6 +40,7 @@ router = APIRouter(
     tags=["Authentication"],
 )
 
+
 # ============================================================
 # Login
 # ============================================================
@@ -52,7 +53,10 @@ router = APIRouter(
 async def login(
     request: LoginRequest,
     db: AsyncSession = Depends(get_db),
-):
+) -> LoginResponse:
+    """
+    Authenticate a user and return a JWT access token.
+    """
 
     service = AuthService(db)
 
@@ -71,7 +75,10 @@ async def login(
 async def register_customer(
     request: CustomerRegister,
     db: AsyncSession = Depends(get_db),
-):
+) -> RegisterResponse:
+    """
+    Register a new customer account.
+    """
 
     service = AuthService(db)
 
@@ -90,7 +97,10 @@ async def register_customer(
 async def register_property_owner(
     request: PropertyRegister,
     db: AsyncSession = Depends(get_db),
-):
+) -> RegisterResponse:
+    """
+    Register a new property owner account.
+    """
 
     service = AuthService(db)
 

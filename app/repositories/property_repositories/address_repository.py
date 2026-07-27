@@ -1,16 +1,31 @@
+# ============================================================
+# Standard Library
+# ============================================================
+
 from uuid import UUID
+
+# ============================================================
+# Third Party
+# ============================================================
 
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+# ============================================================
+# Local Imports
+# ============================================================
+
 from app.models.property_models.address import Address
 
-from app.schema.address_schema.address import (
-    AddressCreate,
+from app.schema.property_schema.address import (
     AddressUpdate,
 )
 
+
+# ============================================================
+# Address Repository
+# ============================================================
 
 class AddressRepository:
     """
@@ -23,28 +38,22 @@ class AddressRepository:
     ):
         self.db = db
 
+    # ========================================================
+    # Create Address
+    # ========================================================
+
     async def create(
         self,
-        address_data: AddressCreate,
+        address: Address,
     ) -> Address:
         """
-        Create a new address.
+        Persist a new address.
         """
         try:
-            address = Address(
-                address_line_1=address_data.address_line_1,
-                address_line_2=address_data.address_line_2,
-                city=address_data.city,
-                state=address_data.state,
-                country=address_data.country,
-                pincode=address_data.pincode,
-                updated_by=address_data.owner_id,
-                created_by=address_data.owner_id,
-            )
-
             self.db.add(address)
 
             await self.db.commit()
+
             await self.db.refresh(address)
 
             return address
@@ -52,6 +61,10 @@ class AddressRepository:
         except SQLAlchemyError:
             await self.db.rollback()
             raise
+
+    # ========================================================
+    # Get All Addresses
+    # ========================================================
 
     async def get_all(
         self,
@@ -62,12 +75,19 @@ class AddressRepository:
         try:
             result = await self.db.execute(
                 select(Address)
+                .order_by(
+                    Address.created_at.desc(),
+                )
             )
 
             return result.scalars().all()
 
         except SQLAlchemyError:
             raise
+
+    # ========================================================
+    # Get Address By ID
+    # ========================================================
 
     async def get_by_id(
         self,
@@ -79,7 +99,7 @@ class AddressRepository:
         try:
             result = await self.db.execute(
                 select(Address).where(
-                    Address.id == address_id
+                    Address.id == address_id,
                 )
             )
 
@@ -87,6 +107,10 @@ class AddressRepository:
 
         except SQLAlchemyError:
             raise
+
+    # ========================================================
+    # Update Address
+    # ========================================================
 
     async def update(
         self,
@@ -98,13 +122,19 @@ class AddressRepository:
         """
         try:
             update_data = address_data.model_dump(
-                exclude_unset=True
+                exclude_unset=True,
+                exclude_none=True,
             )
 
             for key, value in update_data.items():
-                setattr(address, key, value)
+                setattr(
+                    address,
+                    key,
+                    value,
+                )
 
             await self.db.commit()
+
             await self.db.refresh(address)
 
             return address
@@ -113,17 +143,28 @@ class AddressRepository:
             await self.db.rollback()
             raise
 
-    # Optional: keep delete if business requires it.
-    #
-    # @staticmethod
-    # async def delete(
-    #     db: AsyncSession,
-    #     address: Address,
-    # ) -> None:
-    #     try:
-    #         await db.delete(address)
-    #         await db.commit()
-    #
-    #     except SQLAlchemyError:
-    #         await db.rollback()
-    #         raise
+    # ========================================================
+    # Delete Address
+    # ========================================================
+
+    async def delete(
+        self,
+        address: Address,
+    ) -> Address:
+        """
+        Permanently delete an address.
+
+        Addresses should only be deleted when the
+        associated property is permanently removed.
+        """
+
+        try:
+            await self.db.delete(address)
+
+            await self.db.commit()
+
+            return address
+
+        except SQLAlchemyError:
+            await self.db.rollback()
+            raise

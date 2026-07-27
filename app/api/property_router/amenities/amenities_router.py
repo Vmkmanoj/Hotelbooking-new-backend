@@ -22,6 +22,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.session import get_db
 
+from app.dependencies.auth import (
+    get_current_user,
+    require_permission,
+)
+
+from app.models.users_models.users import User
+
 from app.schema.property_schema.amenity_schema import (
     AmenityCreate,
     AmenityResponse,
@@ -49,16 +56,25 @@ router = APIRouter(
     "",
     response_model=AmenityResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[
+        Depends(
+            require_permission(
+                "amenity.create",
+            )
+        )
+    ],
 )
 async def create_amenity(
     request: AmenityCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
 
     service = AmenityService(db)
 
     return await service.create_amenity(
-        request,
+        amenity_data=request,
+        current_user=current_user,
     )
 
 
@@ -70,6 +86,13 @@ async def create_amenity(
     "",
     response_model=list[AmenityResponse],
     status_code=status.HTTP_200_OK,
+    dependencies=[
+        Depends(
+            require_permission(
+                "amenity.view",
+            )
+        )
+    ],
 )
 async def get_all_amenities(
     db: AsyncSession = Depends(get_db),
@@ -81,13 +104,20 @@ async def get_all_amenities(
 
 
 # ============================================================
-# Get Amenity By Id
+# Get Amenity
 # ============================================================
 
 @router.get(
     "/{amenity_id}",
     response_model=AmenityResponse,
     status_code=status.HTTP_200_OK,
+    dependencies=[
+        Depends(
+            require_permission(
+                "amenity.view",
+            )
+        )
+    ],
 )
 async def get_amenity(
     amenity_id: UUID,
@@ -109,11 +139,19 @@ async def get_amenity(
     "/{amenity_id}",
     response_model=AmenityResponse,
     status_code=status.HTTP_200_OK,
+    dependencies=[
+        Depends(
+            require_permission(
+                "amenity.update",
+            )
+        )
+    ],
 )
 async def update_amenity(
     amenity_id: UUID,
     request: AmenityUpdate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
 
     service = AmenityService(db)
@@ -121,6 +159,7 @@ async def update_amenity(
     return await service.update_amenity(
         amenity_id=amenity_id,
         amenity_data=request,
+        current_user=current_user,
     )
 
 
@@ -128,17 +167,24 @@ async def update_amenity(
 # Delete Amenity
 # ============================================================
 
-# @router.delete(
-#     "/{amenity_id}",
-#     status_code=status.HTTP_204_NO_CONTENT,
-# )
-# async def delete_amenity(
-#     amenity_id: UUID,
-#     db: AsyncSession = Depends(get_db),
-# ):
-#
-#     service = AmenityService(db)
-#
-#     await service.delete_amenity(
-#         amenity_id,
-#     )
+@router.delete(
+    "/{amenity_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[
+        Depends(
+            require_permission(
+                "amenity.delete",
+            )
+        )
+    ],
+)
+async def delete_amenity(
+    amenity_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+
+    service = AmenityService(db)
+
+    await service.delete_amenity(
+        amenity_id,
+    )

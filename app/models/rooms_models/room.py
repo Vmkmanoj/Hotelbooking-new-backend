@@ -10,15 +10,15 @@ from uuid import UUID
 # ============================================================
 
 from sqlalchemy import (
+    CheckConstraint,
     ForeignKey,
+    Integer,
     String,
     UniqueConstraint,
     Enum,
 )
 
-from sqlalchemy.dialects.postgresql import (
-    UUID as PG_UUID,
-)
+
 
 from sqlalchemy.orm import (
     Mapped,
@@ -38,9 +38,8 @@ from app.common.enums.room_enums.room_status import (
 
 if TYPE_CHECKING:
     from app.models.rooms_models.room_type import RoomType
-    from app.models.rooms_models.room_image import RoomImage
     from app.models.booking_models.booking_room import BookingRoom
-    from app.models.property_models.property import Property
+    
 
 
 # ============================================================
@@ -63,16 +62,20 @@ class Room(BaseTable):
         UniqueConstraint(
             "room_type_id",
             "room_number",
-            name="uq_room_type_room_number",
+            name="uq_property_room_number",
+        ),
+        CheckConstraint(
+            "length(trim(room_number)) > 0",
+            name="ck_room_number_not_empty",
         ),
     )
-
     # ============================================================
     # Foreign Keys
     # ============================================================
 
+    
     room_type_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True),
+        
         ForeignKey(
             "room_types.id",
             ondelete="CASCADE",
@@ -81,17 +84,19 @@ class Room(BaseTable):
         index=True,
     )
 
+    
+
     # ============================================================
     # Room Information
     # ============================================================
 
-    room_number: Mapped[str] = mapped_column(
+    room_number: Mapped[str | None] = mapped_column(
         String(20),
         nullable=False,
     )
 
-    floor: Mapped[str | None] = mapped_column(
-        String(20),
+    floor: Mapped[int | None] = mapped_column(
+        Integer,
         nullable=True,
     )
 
@@ -101,32 +106,25 @@ class Room(BaseTable):
         nullable=False,
     )
 
+    is_active: Mapped[bool] = mapped_column(
+        default=True,
+        nullable=False,
+    )
     # ============================================================
     # Relationships
     # ============================================================
 
     room_type: Mapped["RoomType"] = relationship(
         back_populates="rooms",
-        lazy="select",
+        
     )
 
-    images: Mapped[list["RoomImage"]] = relationship(
-        back_populates="room",
-        cascade="all, delete-orphan",
-        lazy="select",
-    )
+    
 
     booking_rooms: Mapped[list["BookingRoom"]] = relationship(
         back_populates="room",
-        lazy="select",
+        
     )
 
-    property_id: Mapped[UUID] = mapped_column(
-        ForeignKey("properties.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-
-    property: Mapped["Property"] = relationship(
-        back_populates="rooms"
-    )
+    
+    

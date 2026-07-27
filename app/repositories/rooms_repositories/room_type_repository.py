@@ -87,16 +87,16 @@ class RoomTypeRepository:
     async def get_by_name(
         self,
         property_id: UUID,
-        name: str,
+        room_name: str,
     ) -> RoomType | None:
         """
-        Retrieve a room type by name within a property.
+        Retrieve a room type by room name within a property.
         """
         try:
             result = await self.db.execute(
                 select(RoomType).where(
                     RoomType.property_id == property_id,
-                    RoomType.name == name,
+                    RoomType.room_name == room_name,
                 )
             )
 
@@ -109,7 +109,7 @@ class RoomTypeRepository:
     # Get Room Types By Property
     # ========================================================
 
-    async def get_by_property(
+    async def get_by_property_id(
         self,
         property_id: UUID,
     ) -> list[RoomType]:
@@ -123,7 +123,7 @@ class RoomTypeRepository:
                     RoomType.property_id == property_id,
                 )
                 .order_by(
-                    RoomType.name.asc(),
+                    RoomType.room_name.asc(),
                 )
             )
 
@@ -155,26 +155,7 @@ class RoomTypeRepository:
         except SQLAlchemyError:
             raise
 
-    # ========================================================
-    # Save Room Type
-    # ========================================================
-
-    async def save(
-        self,
-        room_type: RoomType,
-    ) -> RoomType:
-        """
-        Persist changes to a room type.
-        """
-        try:
-            await self.db.commit()
-            await self.db.refresh(room_type)
-
-            return room_type
-
-        except SQLAlchemyError:
-            await self.db.rollback()
-            raise
+    
 
     # ========================================================
     # Delete Room Type
@@ -231,19 +212,27 @@ class RoomTypeRepository:
         room_type: RoomType,
         room_type_data: RoomTypeUpdate,
     ) -> RoomType:
-
-        update_data = room_type_data.model_dump(
-            exclude_unset=True,
-        )
-
-        for field, value in update_data.items():
-            setattr(
-                room_type,
-                field,
-                value,
+        """
+        Update an existing room type.
+        """
+        try:
+            update_data = room_type_data.model_dump(
+                exclude_unset=True,
             )
 
-        await self.db.commit()
-        await self.db.refresh(room_type)
+            for field, value in update_data.items():
+                setattr(
+                    room_type,
+                    field,
+                    value,
+                )
 
-        return room_type
+            await self.db.commit()
+
+            await self.db.refresh(room_type)
+
+            return room_type
+
+        except SQLAlchemyError:
+            await self.db.rollback()
+            raise

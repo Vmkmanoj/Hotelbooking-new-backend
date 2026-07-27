@@ -1,16 +1,33 @@
+# ============================================================
+# Standard Library
+# ============================================================
+
 from uuid import UUID
+
+
+# ============================================================
+# Third Party
+# ============================================================
 
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import func
+
+# ============================================================
+# Local Imports
+# ============================================================
 
 from app.models.property_models.amenities import Amenity
 
 from app.schema.property_schema.amenity_schema import (
-    AmenityCreate,
     AmenityUpdate,
 )
 
+
+# ============================================================
+# Amenity Repository
+# ============================================================
 
 class AmenityRepository:
     """
@@ -23,21 +40,22 @@ class AmenityRepository:
     ):
         self.db = db
 
+    # ========================================================
+    # Create Amenity
+    # ========================================================
+
     async def create(
         self,
-        amenity_data: AmenityCreate,
+        amenity: Amenity,
     ) -> Amenity:
         """
-        Create a new amenity.
+        Persist a new amenity.
         """
         try:
-            amenity = Amenity(
-                **amenity_data.model_dump()
-            )
-
             self.db.add(amenity)
 
             await self.db.commit()
+
             await self.db.refresh(amenity)
 
             return amenity
@@ -45,6 +63,10 @@ class AmenityRepository:
         except SQLAlchemyError:
             await self.db.rollback()
             raise
+
+    # ========================================================
+    # Get Amenity By ID
+    # ========================================================
 
     async def get_by_id(
         self,
@@ -56,7 +78,7 @@ class AmenityRepository:
         try:
             result = await self.db.execute(
                 select(Amenity).where(
-                    Amenity.id == amenity_id
+                    Amenity.id == amenity_id,
                 )
             )
 
@@ -65,9 +87,13 @@ class AmenityRepository:
         except SQLAlchemyError:
             raise
 
+    # ========================================================
+    # Get Amenity By Name
+    # ========================================================
+
     async def get_by_name(
         self,
-        name: str,
+        room_name: str,
     ) -> Amenity | None:
         """
         Retrieve an amenity by name.
@@ -75,7 +101,7 @@ class AmenityRepository:
         try:
             result = await self.db.execute(
                 select(Amenity).where(
-                    Amenity.name == name
+                    func.lower(Amenity.name) == room_name.lower(),
                 )
             )
 
@@ -83,6 +109,10 @@ class AmenityRepository:
 
         except SQLAlchemyError:
             raise
+
+    # ========================================================
+    # Get All Amenities
+    # ========================================================
 
     async def get_all(
         self,
@@ -93,13 +123,19 @@ class AmenityRepository:
         try:
             result = await self.db.execute(
                 select(Amenity)
-                .order_by(Amenity.name)
+                .order_by(
+                    Amenity.name,
+                )
             )
 
             return result.scalars().all()
 
         except SQLAlchemyError:
             raise
+
+    # ========================================================
+    # Update Amenity
+    # ========================================================
 
     async def update(
         self,
@@ -111,13 +147,18 @@ class AmenityRepository:
         """
         try:
             update_data = amenity_data.model_dump(
-                exclude_unset=True
+                exclude_unset=True,
             )
 
             for key, value in update_data.items():
-                setattr(amenity, key, value)
+                setattr(
+                    amenity,
+                    key,
+                    value,
+                )
 
             await self.db.commit()
+
             await self.db.refresh(amenity)
 
             return amenity
@@ -126,16 +167,22 @@ class AmenityRepository:
             await self.db.rollback()
             raise
 
-    # Optional
-    # @staticmethod
-    # async def delete(
-    #     db: AsyncSession,
-    #     amenity: Amenity,
-    # ) -> None:
-    #     try:
-    #         await db.delete(amenity)
-    #         await db.commit()
-    #
-    #     except SQLAlchemyError:
-    #         await db.rollback()
-    #         raise
+    # ========================================================
+    # Delete Amenity
+    # ========================================================
+
+    async def delete(
+        self,
+        amenity: Amenity,
+    ) -> None:
+        """
+        Permanently delete an amenity.
+        """
+        try:
+            await self.db.delete(amenity)
+
+            await self.db.commit()
+
+        except SQLAlchemyError:
+            await self.db.rollback()
+            raise

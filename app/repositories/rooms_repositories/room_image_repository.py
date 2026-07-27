@@ -19,13 +19,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.rooms_models.room_image import RoomImage
 from app.schema.rooms_schemas.room_image_schema import RoomImageUpdate
 
+
 # ============================================================
 # Room Image Repository
 # ============================================================
 
 class RoomImageRepository:
     """
-    Repository responsible for Room Image database operations.
+    Repository responsible for Room Type Image database operations.
     """
 
     def __init__(
@@ -42,9 +43,7 @@ class RoomImageRepository:
         self,
         room_image: RoomImage,
     ) -> RoomImage:
-        """
-        Create a new room image.
-        """
+
         try:
             self.db.add(room_image)
 
@@ -65,9 +64,7 @@ class RoomImageRepository:
         self,
         room_image_id: UUID,
     ) -> RoomImage | None:
-        """
-        Retrieve a room image by its ID.
-        """
+
         try:
             result = await self.db.execute(
                 select(RoomImage).where(
@@ -81,24 +78,22 @@ class RoomImageRepository:
             raise
 
     # ========================================================
-    # Get Images By Room
+    # Get Images By Room Type
     # ========================================================
 
-    async def get_by_room(
+    async def get_by_room_type_id(
         self,
-        room_id: UUID,
+        room_type_id: UUID,
     ) -> list[RoomImage]:
-        """
-        Retrieve all images belonging to a room.
-        """
+
         try:
             result = await self.db.execute(
                 select(RoomImage)
                 .where(
-                    RoomImage.room_id == room_id,
+                    RoomImage.room_type_id == room_type_id,
                 )
                 .order_by(
-                    RoomImage.created_at.asc(),
+                    RoomImage.display_order.asc(),
                 )
             )
 
@@ -108,21 +103,19 @@ class RoomImageRepository:
             raise
 
     # ========================================================
-    # Get Primary Image
+    # Get Cover Image
     # ========================================================
 
-    async def get_primary_image(
+    async def get_cover_image(
         self,
-        room_id: UUID,
+        room_type_id: UUID,
     ) -> RoomImage | None:
-        """
-        Retrieve the primary image for a room.
-        """
+
         try:
             result = await self.db.execute(
                 select(RoomImage).where(
-                    RoomImage.room_id == room_id,
-                    RoomImage.is_primary.is_(True),
+                    RoomImage.room_type_id == room_type_id,
+                    RoomImage.is_cover.is_(True),
                 )
             )
 
@@ -138,9 +131,7 @@ class RoomImageRepository:
     async def get_all(
         self,
     ) -> list[RoomImage]:
-        """
-        Retrieve all room images.
-        """
+
         try:
             result = await self.db.execute(
                 select(RoomImage)
@@ -155,21 +146,21 @@ class RoomImageRepository:
             raise
 
     # ========================================================
-    # Remove Existing Primary Image
+    # Clear Cover Image
     # ========================================================
 
-    async def clear_primary_image(
+    async def clear_cover_image(
         self,
-        room_id: UUID,
+        room_type_id: UUID,
     ) -> None:
-        """
-        Remove the current primary image for a room.
-        """
+
         try:
-            image = await self.get_primary_image(room_id)
+            image = await self.get_cover_image(
+                room_type_id,
+            )
 
             if image:
-                image.is_primary = False
+                image.is_cover = False
                 await self.db.flush()
 
         except SQLAlchemyError:
@@ -177,17 +168,27 @@ class RoomImageRepository:
             raise
 
     # ========================================================
-    # Save Room Image
+    # Update Room Image
     # ========================================================
 
-    async def save(
+    async def update(
         self,
         room_image: RoomImage,
+        room_image_data: RoomImageUpdate,
     ) -> RoomImage:
-        """
-        Persist changes to a room image.
-        """
+
         try:
+            update_data = room_image_data.model_dump(
+                exclude_unset=True,
+            )
+
+            for field, value in update_data.items():
+                setattr(
+                    room_image,
+                    field,
+                    value,
+                )
+
             await self.db.commit()
             await self.db.refresh(room_image)
 
@@ -197,28 +198,6 @@ class RoomImageRepository:
             await self.db.rollback()
             raise
 
-    async def update(
-        self,
-        room_image: RoomImage,
-        room_image_data: RoomImageUpdate,
-    ) -> RoomImage:
-
-        update_data = room_image_data.model_dump(
-            exclude_unset=True,
-        )
-
-        for field, value in update_data.items():
-            setattr(
-                room_image,
-                field,
-                value,
-            )
-
-        await self.db.commit()
-        await self.db.refresh(room_image)
-
-        return room_image
-    
     # ========================================================
     # Delete Room Image
     # ========================================================
@@ -227,11 +206,11 @@ class RoomImageRepository:
         self,
         room_image: RoomImage,
     ) -> None:
-        """
-        Delete a room image.
-        """
+
         try:
-            await self.db.delete(room_image)
+            await self.db.delete(
+                room_image,
+            )
 
             await self.db.commit()
 

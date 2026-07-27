@@ -81,10 +81,8 @@ class RolePermission(BaseTable):
 
     role: Mapped["Role"] = relationship(
         back_populates="role_permissions",
-        lazy="select",
     )
 
     permission: Mapped["Permission"] = relationship(
         back_populates="role_permissions",
-        lazy="select",
     )

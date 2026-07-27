@@ -21,10 +21,9 @@ from pydantic import (
 
 class PropertyImageCreate(BaseModel):
     """
-    Schema for uploading a property image.
+    Upload a new image for a property.
+    Property ID comes from the URL.
     """
-
-    property_id: UUID
 
     image_url: str = Field(
         min_length=5,
@@ -35,8 +34,6 @@ class PropertyImageCreate(BaseModel):
         default=None,
         max_length=255,
     )
-
-    is_primary: bool = False
 
     is_cover: bool = False
 
@@ -56,7 +53,7 @@ class PropertyImageCreate(BaseModel):
 
 class PropertyImageUpdate(BaseModel):
     """
-    Schema for updating a property image.
+    Update property image metadata.
     """
 
     image_url: str | None = Field(
@@ -69,8 +66,6 @@ class PropertyImageUpdate(BaseModel):
         default=None,
         max_length=255,
     )
-
-    is_primary: bool | None = None
 
     is_cover: bool | None = None
 
@@ -101,15 +96,13 @@ class PropertyImageResponse(BaseModel):
 
     caption: str | None = None
 
-    is_primary: bool
-
     is_cover: bool
 
     display_order: int
 
-    created_by: UUID | None = None
+    created_by: str | None = None
 
-    updated_by: UUID | None = None
+    updated_by: str | None = None
 
     created_at: datetime
 

@@ -12,7 +12,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import (
     DateTime,
     func,
-    String
+    String,
 )
 
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID

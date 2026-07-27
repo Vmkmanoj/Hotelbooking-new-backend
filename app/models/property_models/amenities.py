@@ -77,11 +77,9 @@ class Amenity(BaseTable):
     property_amenities: Mapped[list["PropertyAmenity"]] = relationship(
         back_populates="amenity",
         cascade="all, delete-orphan",
-        lazy="select",
     )
 
     room_amenities: Mapped[list["RoomAmenity"]] = relationship(
     back_populates="amenity",
     cascade="all, delete-orphan",
-    lazy="select",
 )

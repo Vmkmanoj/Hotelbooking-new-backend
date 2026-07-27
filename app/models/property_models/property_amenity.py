@@ -77,10 +77,8 @@ class PropertyAmenity(BaseTable):
 
     property: Mapped["Property"] = relationship(
         back_populates="property_amenities",
-        lazy="select",
     )
 
     amenity: Mapped["Amenity"] = relationship(
         back_populates="property_amenities",
-        lazy="select",
     )

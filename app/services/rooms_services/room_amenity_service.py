@@ -18,16 +18,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # Local Imports
 # ============================================================
 
-from app.models.rooms_models.room_amenity import RoomAmenity
+from app.common.enums.user_enums.role_name import (
+    RoleName,
+)
 
+from app.models.property_models.property import Property
+from app.models.rooms_models.room_amenity import RoomAmenity
+from app.models.rooms_models.room_type import RoomType
+from app.models.users_models.users import User
+
+from app.repositories.property_repositories.amenity_repository import (
+    AmenityRepository,
+)
+from app.repositories.property_repositories.property_repository import (
+    PropertyRepository,
+)
 from app.repositories.rooms_repositories.room_amenity_repository import (
     RoomAmenityRepository,
 )
 from app.repositories.rooms_repositories.room_type_repository import (
     RoomTypeRepository,
-)
-from app.repositories.property_repositories.amenity_repository import (
-    AmenityRepository,
 )
 
 from app.schema.rooms_schemas.room_amenity_schema import (
@@ -48,25 +58,22 @@ class RoomAmenityService:
         self.repo = RoomAmenityRepository(db)
         self.room_type_repo = RoomTypeRepository(db)
         self.amenity_repo = AmenityRepository(db)
+        self.property_repo = PropertyRepository(db)
 
     # ========================================================
-    # Create Room Amenity Mapping
+    # Create Room Amenity
     # ========================================================
 
-    async def create(
+    async def create_room_amenity(
         self,
         request: RoomAmenityCreate,
+        current_user: User,
     ) -> RoomAmenity:
 
-        room_type = await self.room_type_repo.get_by_id(
-            request.room_type_id,
+        room_type = await self._validate_room_type_owner(
+            room_type_id=request.room_type_id,
+            current_user=current_user,
         )
-
-        if room_type is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Room type not found.",
-            )
 
         amenity = await self.amenity_repo.get_by_id(
             request.amenity_id,
@@ -78,19 +85,21 @@ class RoomAmenityService:
                 detail="Amenity not found.",
             )
 
-        exists = await self.repo.exists(
+        existing_mapping = await self.repo.exists(
             request.room_type_id,
             request.amenity_id,
         )
 
-        if exists:
+        if existing_mapping:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Amenity is already mapped to this room type.",
+                detail="Amenity is already assigned to this room type.",
             )
 
         room_amenity = RoomAmenity(
             **request.model_dump(),
+            created_by=current_user.email,
+            updated_by=current_user.email,
         )
 
         return await self.repo.create(
@@ -98,14 +107,20 @@ class RoomAmenityService:
         )
 
     # ========================================================
-    # Get Mapping
+    # Get Room Amenity
     # ========================================================
 
-    async def get_by_id(
+    async def get_room_amenity(
         self,
         room_type_id: UUID,
         amenity_id: UUID,
+        current_user: User,
     ) -> RoomAmenity:
+
+        await self._validate_room_type_owner(
+            room_type_id,
+            current_user,
+        )
 
         return await self._get_room_amenity_or_404(
             room_type_id,
@@ -113,27 +128,39 @@ class RoomAmenityService:
         )
 
     # ========================================================
-    # Get Amenities By Room Type
+    # Get Room Amenities
     # ========================================================
 
-    async def get_by_room_type(
+    async def get_room_amenities(
         self,
         room_type_id: UUID,
+        current_user: User,
     ) -> list[RoomAmenity]:
+
+        await self._validate_room_type_owner(
+            room_type_id,
+            current_user,
+        )
 
         return await self.repo.get_by_room_type(
             room_type_id,
         )
 
     # ========================================================
-    # Delete Mapping
+    # Delete Room Amenity
     # ========================================================
 
-    async def delete(
+    async def delete_room_amenity(
         self,
         room_type_id: UUID,
         amenity_id: UUID,
+        current_user: User,
     ) -> None:
+
+        await self._validate_room_type_owner(
+            room_type_id,
+            current_user,
+        )
 
         room_amenity = await self._get_room_amenity_or_404(
             room_type_id,
@@ -166,3 +193,40 @@ class RoomAmenityService:
             )
 
         return room_amenity
+
+    async def _validate_room_type_owner(
+        self,
+        room_type_id: UUID,
+        current_user: User,
+    ) -> RoomType:
+
+        room_type = await self.room_type_repo.get_by_id(
+            room_type_id,
+        )
+
+        if room_type is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Room type not found.",
+            )
+
+        property_obj = await self.property_repo.get_by_id(
+            room_type.property_id,
+        )
+
+        if property_obj is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Property not found.",
+            )
+
+        if (
+            current_user.role.name != RoleName.SUPER_ADMIN.value
+            and property_obj.owner_id != current_user.id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not allowed to manage this room type.",
+            )
+
+        return room_type

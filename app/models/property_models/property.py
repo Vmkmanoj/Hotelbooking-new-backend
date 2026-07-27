@@ -2,7 +2,7 @@
 # Standard Library
 # ============================================================
 
-from app.models.review_models.review_model import Review
+
 from datetime import (
     datetime,
     time,
@@ -18,6 +18,7 @@ from uuid import UUID
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     Enum,
     ForeignKey,
@@ -45,12 +46,15 @@ from app.database.base_table import BaseTable
 from app.common.enums.property_enums.property_status import (
     PropertyStatus,
 )
+from app.common.enums.property_enums.property_type import PropertyType
+
 
 if TYPE_CHECKING:
     from app.models.users_models.users import User
     from app.models.property_models.address import Address
     from app.models.favorites_models.favorites import Favorite
     from app.models.rooms_models.room import Room
+    from app.models.rooms_models.room_type import RoomType
     from app.models.property_models.property_amenity import (
         PropertyAmenity,
     )
@@ -58,12 +62,23 @@ if TYPE_CHECKING:
         PropertyImage,
     )
     from app.models.booking_models.booking import Booking
+    from app.models.review_models.review_model import Review
 
 
 
 class Property(BaseTable):
     __tablename__ = "properties"
 
+    __table_args__ = (
+        CheckConstraint(
+            "(star_rating IS NULL) OR (star_rating BETWEEN 1 AND 5)",
+            name="ck_property_star_rating",
+        ),
+        CheckConstraint(
+            "avg_rating >= 0 AND avg_rating <= 5",
+            name="ck_property_avg_rating",
+        ),
+    )
     
     owner_id: Mapped[UUID] = mapped_column(
         ForeignKey(
@@ -80,6 +95,7 @@ class Property(BaseTable):
             ondelete="CASCADE",
         ),
         nullable=False,
+        unique=True,
     )
 
     approved_by: Mapped[UUID | None] = mapped_column(
@@ -100,8 +116,11 @@ class Property(BaseTable):
         nullable=True,
     )
 
-    property_type: Mapped[str] = mapped_column(
-        String(100),
+    property_type: Mapped[PropertyType] = mapped_column(
+        Enum(
+            PropertyType,
+            name="propertytype",
+        ),
         nullable=False,
     )
 
@@ -205,67 +224,50 @@ class Property(BaseTable):
     owner: Mapped["User"] = relationship(
         foreign_keys=[owner_id],
         back_populates="properties",
-        lazy="select",
     )
 
     approved_admin: Mapped["User | None"] = relationship(
         foreign_keys=[approved_by],
         back_populates="approved_properties",
-        lazy="select",
     )
 
     address: Mapped["Address"] = relationship(
         back_populates="property",
         uselist=False,
-        lazy="select",
     )
 
     favorites: Mapped[list["Favorite"]] = relationship(
         back_populates="property",
         cascade="all, delete-orphan",
-        lazy="select",
     )
 
-    rooms: Mapped[list["Room"]] = relationship(
-        back_populates="property",
-        cascade="all, delete-orphan",
-        lazy="select",
-    )
+    
 
     property_amenities: Mapped[list["PropertyAmenity"]] = relationship(
         back_populates="property",
         cascade="all, delete-orphan",
-        lazy="select",
     )
 
     property_images: Mapped[list["PropertyImage"]] = relationship(
         back_populates="property",
         cascade="all, delete-orphan",
-        lazy="select",
     )
 
     bookings: Mapped[list["Booking"]] = relationship(
         back_populates="property",
-        lazy="select",
+
     )
 
-    room_types = relationship(
-        "RoomType",
-        back_populates="property"
+    room_types: Mapped[list["RoomType"]] = relationship(
+        back_populates="property",
     )
-
 
     reviews: Mapped[list["Review"]] = relationship(
         back_populates="property",
         cascade="all, delete-orphan",
-        lazy="select",
+        
     )
 
 
-    # reviews: Mapped[list["Review"]] = relationship(
-    #     back_populates="property",
-    #     cascade="all, delete-orphan",
-    #     lazy="select",
-    # )
-
+    
         

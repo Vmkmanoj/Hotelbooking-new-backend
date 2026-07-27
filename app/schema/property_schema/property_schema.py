@@ -25,13 +25,17 @@ from app.common.enums.property_enums.property_status import (
     PropertyStatus,
 )
 
+from app.common.enums.property_enums.property_type import (
+    PropertyType,
+)
+
 # ============================================================
 # Property Base
 # ============================================================
 
 class PropertyBase(BaseModel):
     """
-    Base schema shared by Create, Update and Response.
+    Base schema shared by Property Create, Update and Response.
     """
 
     property_name: str = Field(
@@ -41,10 +45,7 @@ class PropertyBase(BaseModel):
 
     description: str | None = None
 
-    property_type: str = Field(
-        min_length=3,
-        max_length=100,
-    )
+    property_type: PropertyType
 
     star_rating: int | None = Field(
         default=None,
@@ -77,7 +78,7 @@ class PropertyBase(BaseModel):
 
 
 # ============================================================
-# Create
+# Property Create
 # ============================================================
 
 class PropertyCreate(PropertyBase):
@@ -85,10 +86,8 @@ class PropertyCreate(PropertyBase):
     Property creation request.
 
     owner_id is intentionally omitted.
-    It will be taken from the authenticated JWT user.
+    The authenticated user (JWT) becomes the owner.
     """
-
-    owner_id: UUID
 
     address_line_1: str = Field(
         min_length=3,
@@ -122,10 +121,15 @@ class PropertyCreate(PropertyBase):
 
 
 # ============================================================
-# Update
+# Property Update
 # ============================================================
 
 class PropertyUpdate(BaseModel):
+    """
+    Property update request.
+
+    Every field is optional to support PATCH updates.
+    """
 
     property_name: str | None = Field(
         default=None,
@@ -135,11 +139,7 @@ class PropertyUpdate(BaseModel):
 
     description: str | None = None
 
-    property_type: str | None = Field(
-        default=None,
-        min_length=3,
-        max_length=100,
-    )
+    property_type: PropertyType | None = None
 
     star_rating: int | None = Field(
         default=None,
@@ -157,7 +157,7 @@ class PropertyUpdate(BaseModel):
 
     cancellation_policy: str | None = None
 
-    house_rules: dict[str, str] | None = None
+    house_rules: dict[str, bool] | None = None
 
     child_policy: str | None = None
 
@@ -177,10 +177,13 @@ class PropertyUpdate(BaseModel):
 
 
 # ============================================================
-# Response
+# Property Response
 # ============================================================
 
 class PropertyResponse(PropertyBase):
+    """
+    Property response returned to the client.
+    """
 
     id: UUID
 
@@ -198,13 +201,13 @@ class PropertyResponse(PropertyBase):
 
     is_deleted: bool
 
-    avg_rating: Decimal | None = None
+    avg_rating: Decimal
 
     total_reviews: int
 
-    created_by: UUID | None = None
+    created_by: str | None = None
 
-    updated_by: UUID | None = None
+    updated_by: str | None = None
 
     created_at: datetime
 

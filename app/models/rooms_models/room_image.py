@@ -11,14 +11,10 @@ from uuid import UUID
 
 from sqlalchemy import (
     Boolean,
-    Enum,
+    CheckConstraint,
     ForeignKey,
     Integer,
     String,
-)
-
-from sqlalchemy.dialects.postgresql import (
-    UUID as PG_UUID,
 )
 
 from sqlalchemy.orm import (
@@ -33,12 +29,8 @@ from sqlalchemy.orm import (
 
 from app.database.base_table import BaseTable
 
-from app.common.enums.room_enums.room_image_type import (
-    RoomImageType,
-)
-
 if TYPE_CHECKING:
-    from app.models.rooms_models.room import Room
+    from app.models.rooms_models.room_type import RoomType
 
 
 # ============================================================
@@ -47,22 +39,31 @@ if TYPE_CHECKING:
 
 class RoomImage(BaseTable):
     """
-    Stores images for an individual room.
+    Stores images for a Room Type.
 
-    A room can have multiple images.
-    One image can be marked as the primary image.
+    Example:
+    Deluxe Room
+        ├── Image 1
+        ├── Image 2
+        └── Image 3
     """
 
     __tablename__ = "room_images"
 
+    __table_args__ = (
+        CheckConstraint(
+            "display_order > 0",
+            name="ck_room_image_display_order",
+        ),
+    )
+
     # ============================================================
-    # Foreign Keys
+    # Foreign Key
     # ============================================================
 
-    room_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True),
+    room_type_id: Mapped[UUID] = mapped_column(
         ForeignKey(
-            "rooms.id",
+            "room_types.id",
             ondelete="CASCADE",
         ),
         nullable=False,
@@ -78,26 +79,21 @@ class RoomImage(BaseTable):
         nullable=False,
     )
 
-    image_name: Mapped[str | None] = mapped_column(
+    caption: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
-    )
-
-    image_type: Mapped[RoomImageType] = mapped_column(
-        Enum(RoomImageType),
-        default=RoomImageType.ROOM,
-        nullable=False,
-    )
-
-    is_primary: Mapped[bool] = mapped_column(
-        Boolean,
-        default=False,
-        nullable=False,
     )
 
     display_order: Mapped[int] = mapped_column(
         Integer,
         default=1,
+        nullable=False,
+        index=True,
+    )
+
+    is_cover: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
         nullable=False,
     )
 
@@ -105,7 +101,6 @@ class RoomImage(BaseTable):
     # Relationships
     # ============================================================
 
-    room: Mapped["Room"] = relationship(
-        back_populates="images",
-        lazy="select",
+    room_type: Mapped["RoomType"] = relationship(
+        back_populates="room_images",
     )

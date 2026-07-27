@@ -68,6 +68,19 @@ class Payment(BaseTable):
     )
 
     # ============================================================
+    # Customer Reference
+    # ============================================================
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        index=True,
+    )
+
+    # ============================================================
     # Payment Information
     # ============================================================
 
@@ -170,6 +183,7 @@ class Payment(BaseTable):
         back_populates="payments",
     )
 
-    # paid_by_user : Mapped["User"] = relationship(
-    #     back_populates="payments"
-    # )
+    paid_by_user: Mapped["User"] = relationship(
+        foreign_keys=[user_id],
+        back_populates="payments",
+    )

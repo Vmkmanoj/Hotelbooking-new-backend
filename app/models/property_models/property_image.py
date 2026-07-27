@@ -70,11 +70,7 @@ class PropertyImage(BaseTable):
         nullable=True,
     )
 
-    is_primary: Mapped[bool] = mapped_column(
-        Boolean,
-        default=False,
-        nullable=False,
-    )
+    
 
     is_cover: Mapped[bool] = mapped_column(
         Boolean,
@@ -86,6 +82,7 @@ class PropertyImage(BaseTable):
         Integer,
         default=1,
         nullable=False,
+        index=True,
     )
 
     # ============================================================
@@ -94,5 +91,4 @@ class PropertyImage(BaseTable):
 
     property: Mapped["Property"] = relationship(
         back_populates="property_images",
-        lazy="select",
     )

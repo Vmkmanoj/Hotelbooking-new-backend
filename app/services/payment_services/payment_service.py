@@ -160,8 +160,8 @@ class PaymentService:
             payment_status=PaymentStatus.PENDING,
             refund_status=RefundStatus.NOT_APPLICABLE,
             refund_amount=Decimal("0.00"),
-            created_by=current_user.id,
-            updated_by=current_user.id,
+            created_by=current_user.email,
+updated_by=current_user.email   
         )
 
         try:
