@@ -14,10 +14,6 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 
-from sqlalchemy.dialects.postgresql import (
-    UUID as PG_UUID,
-)
-
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
@@ -41,10 +37,7 @@ if TYPE_CHECKING:
 
 class RoomAmenity(BaseTable):
     """
-    Junction table between Room Types and Amenities.
-
-    One Room Type -> Many Amenities
-    One Amenity -> Many Room Types
+    Maps amenities to a Room Type.
     """
 
     __tablename__ = "room_amenities"
@@ -62,7 +55,6 @@ class RoomAmenity(BaseTable):
     # ============================================================
 
     room_type_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True),
         ForeignKey(
             "room_types.id",
             ondelete="CASCADE",
@@ -72,7 +64,6 @@ class RoomAmenity(BaseTable):
     )
 
     amenity_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True),
         ForeignKey(
             "amenities.id",
             ondelete="CASCADE",
@@ -87,10 +78,8 @@ class RoomAmenity(BaseTable):
 
     room_type: Mapped["RoomType"] = relationship(
         back_populates="room_amenities",
-        lazy="select",
     )
 
     amenity: Mapped["Amenity"] = relationship(
         back_populates="room_amenities",
-        lazy="select",
     )

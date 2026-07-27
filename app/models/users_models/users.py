@@ -2,7 +2,7 @@
 # Standard Library
 # ============================================================
 
-from app.models.review_models.review_model import Review
+
 from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -34,12 +34,15 @@ from app.common.enums.user_enums.user_status import (
     UserStatus,
 )
 
+
+
 if TYPE_CHECKING:
     from app.models.permissions_models.roles import Role
     from app.models.property_models.property import Property
     from app.models.favorites_models.favorites import Favorite
     from app.models.booking_models.booking import Booking
     from app.models.payment_models.payment import Payment
+    from app.models.review_models.review_model import Review
 
 
 # ============================================================
@@ -85,6 +88,7 @@ class User(BaseTable):
 
     phone: Mapped[str | None] = mapped_column(
         String(20),
+        unique=True,
         nullable=True,
     )
 
@@ -112,12 +116,12 @@ class User(BaseTable):
     # Role
     # ============================================================
 
-    role_id: Mapped[UUID | None] = mapped_column(
+    role_id: Mapped[UUID] = mapped_column(
         ForeignKey(
             "roles.id",
-            ondelete="SET NULL",
+            ondelete="RESTRICT",
         ),
-        nullable=True,
+        nullable=False,
         index=True,
     )
 
@@ -127,44 +131,46 @@ class User(BaseTable):
 
     role: Mapped["Role | None"] = relationship(
         back_populates="users",
-        lazy="select",
+        
     )
 
     # Properties owned by the user
     properties: Mapped[list["Property"]] = relationship(
         foreign_keys="Property.owner_id",
         back_populates="owner",
-        lazy="select",
+        
     )
 
     # Properties approved by the admin
     approved_properties: Mapped[list["Property"]] = relationship(
         foreign_keys="Property.approved_by",
         back_populates="approved_admin",
-        lazy="select",
+        
     )
 
     # User favourites
     favorites: Mapped[list["Favorite"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
-        lazy="select",
+        
     )
 
     # Customer bookings
     bookings: Mapped[list["Booking"]] = relationship(
         back_populates="customer",
-        lazy="select",
+        
     )
 
     reviews: Mapped[list["Review"]] = relationship(
-    back_populates="customer",
-    cascade="all, delete-orphan",
-    lazy="select",
-)
+        back_populates="customer",
+        cascade="all, delete-orphan",       
+    )
 
-    # # Customer payments
-    # payments: Mapped[list["Payment"]] = relationship(
-    #     back_populates="paid_by_user",
-    #     lazy="select",
-    # )
+    # Customer payments
+    payments: Mapped[list["Payment"]] = relationship(
+        foreign_keys="Payment.user_id",
+        back_populates="paid_by_user",
+    )
+
+
+    

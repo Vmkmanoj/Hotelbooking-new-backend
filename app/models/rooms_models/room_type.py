@@ -11,16 +11,18 @@ from uuid import UUID
 # ============================================================
 
 from sqlalchemy import (
+    CheckConstraint,
     ForeignKey,
     Integer,
     Numeric,
     String,
     Text,
+    UniqueConstraint,
 )
 
 from sqlalchemy.dialects.postgresql import (
     JSONB,
-    UUID as PG_UUID,
+    
 )
 
 from sqlalchemy.orm import (
@@ -35,10 +37,12 @@ from sqlalchemy.orm import (
 
 from app.database.base_table import BaseTable
 
+
 if TYPE_CHECKING:
     from app.models.property_models.property import Property
     from app.models.rooms_models.room import Room
     from app.models.rooms_models.room_amenity import RoomAmenity
+    from app.models.rooms_models.room_image import RoomImage
 
 
 # ============================================================
@@ -59,12 +63,28 @@ class RoomType(BaseTable):
 
     __tablename__ = "room_types"
 
+    __table_args__ = (
+        UniqueConstraint(
+            "property_id",
+            "room_name",
+            name="uq_property_room_type",
+        ),
+        CheckConstraint(
+            "max_adults > 0",
+            name="ck_room_type_max_adults",
+        ),
+        CheckConstraint(
+            "max_children >= 0",
+            name="ck_room_type_max_children",
+        ),
+    )
+
     # ============================================================
     # Foreign Keys
     # ============================================================
 
     property_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True),
+       
         ForeignKey(
             "properties.id",
             ondelete="CASCADE",
@@ -77,7 +97,7 @@ class RoomType(BaseTable):
     # Room Type Information
     # ============================================================
 
-    name: Mapped[str] = mapped_column(
+    room_name: Mapped[str] = mapped_column(
         String(150),
         nullable=False,
     )
@@ -87,7 +107,12 @@ class RoomType(BaseTable):
         nullable=True,
     )
 
-    max_occupancy: Mapped[int] = mapped_column(
+    max_adults: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    max_children: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
     )
@@ -97,7 +122,7 @@ class RoomType(BaseTable):
         nullable=False,
     )
 
-    size_sqm: Mapped[Decimal | None] = mapped_column(
+    room_size_sqm: Mapped[Decimal | None] = mapped_column(
         Numeric(6, 2),
         nullable=True,
     )
@@ -119,17 +144,20 @@ class RoomType(BaseTable):
 
     property: Mapped["Property"] = relationship(
         back_populates="room_types",
-        lazy="select",
+        
     )
 
     rooms: Mapped[list["Room"]] = relationship(
         back_populates="room_type",
         cascade="all, delete-orphan",
-        lazy="select",
+    )
+
+    room_images: Mapped[list["RoomImage"]] = relationship(
+        back_populates="room_type",
+        cascade="all, delete-orphan",
     )
 
     room_amenities: Mapped[list["RoomAmenity"]] = relationship(
         back_populates="room_type",
         cascade="all, delete-orphan",
-        lazy="select",
     )

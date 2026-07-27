@@ -39,12 +39,14 @@ class RoomBase(BaseModel):
         max_length=20,
     )
 
-    floor: str | None = Field(
+    floor: int | None = Field(
         default=None,
-        max_length=20,
+        ge=0,
     )
 
     status: RoomStatus = RoomStatus.AVAILABLE
+
+    is_active: bool = True
 
 
 # ============================================================
@@ -70,12 +72,14 @@ class RoomUpdate(BaseModel):
         max_length=20,
     )
 
-    floor: str | None = Field(
+    floor: int | None = Field(
         default=None,
-        max_length=20,
+        ge=0,
     )
 
     status: RoomStatus | None = None
+
+    is_active: bool | None = None
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -90,9 +94,9 @@ class RoomResponse(RoomBase):
 
     id: UUID
 
-    created_by: UUID | None = None
+    created_by: str | None = None
 
-    updated_by: UUID | None = None
+    updated_by: str | None = None
 
     created_at: datetime
 

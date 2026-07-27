@@ -80,5 +80,4 @@ class Address(BaseTable):
     property: Mapped["Property"] = relationship(
         back_populates="address",
         uselist=False,
-        lazy="select",
     )

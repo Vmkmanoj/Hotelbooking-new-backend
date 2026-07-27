@@ -48,6 +48,10 @@ class RoomRepository:
         room: Room,
     ) -> Room:
 
+        """
+        Persist a new room.
+        """
+
         try:
             self.db.add(room)
 
@@ -69,6 +73,9 @@ class RoomRepository:
         room_id: UUID,
     ) -> Room | None:
 
+        """
+        Retrieve a room by ID.
+        """
         try:
             result = await self.db.execute(
                 select(Room).where(
@@ -90,6 +97,11 @@ class RoomRepository:
         property_id: UUID,
         room_number: str,
     ) -> Room | None:
+
+
+        """
+        Retrieve a room by number within a property.
+        """
 
         try:
             result = await self.db.execute(
@@ -113,11 +125,14 @@ class RoomRepository:
     # Get Rooms By Room Type
     # ========================================================
 
-    async def get_by_room_type(
+    async def get_by_room_type_id(
         self,
         room_type_id: UUID,
     ) -> list[Room]:
 
+        """
+        Retrieve all rooms of a room type.
+        """
         try:
             result = await self.db.execute(
                 select(Room)
@@ -142,7 +157,9 @@ class RoomRepository:
         self,
         room_type_id: UUID,
     ) -> list[Room]:
-
+        """
+        Retrieve available rooms of a room type.
+        """
         try:
             result = await self.db.execute(
                 select(Room)
@@ -168,6 +185,9 @@ class RoomRepository:
         self,
     ) -> list[Room]:
 
+        """
+        Retrieve all rooms.
+        """
         try:
             result = await self.db.execute(
                 select(Room)
@@ -191,6 +211,10 @@ class RoomRepository:
         room_data: RoomUpdate,
     ) -> Room:
 
+
+        """
+        Update an existing room.
+        """
         try:
             update_data = room_data.model_dump(
                 exclude_unset=True,
@@ -221,6 +245,10 @@ class RoomRepository:
         room: Room,
     ) -> None:
 
+
+        """
+        Delete a room.
+        """
         try:
             await self.db.delete(room)
             await self.db.commit()

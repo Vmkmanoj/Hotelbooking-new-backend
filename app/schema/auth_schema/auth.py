@@ -19,10 +19,9 @@ class CustomerRegister(BaseModel):
     Customer registration request.
     """
 
-    userName: str = Field(
-        min_length=3,
-        max_length=100,
-    )
+    first_name: str
+
+    last_name: str | None = None
 
     email: EmailStr
 

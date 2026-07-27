@@ -20,7 +20,7 @@ from pydantic import (
 
 class PropertyAmenityCreate(BaseModel):
     """
-    Assign an amenity to a property.
+    Request schema for assigning an amenity to a property.
     """
 
     property_id: UUID
@@ -38,7 +38,9 @@ class PropertyAmenityCreate(BaseModel):
 
 class PropertyAmenityUpdate(BaseModel):
     """
-    Update a property-amenity mapping.
+    Request schema for updating a property-amenity mapping.
+
+    All fields are optional to support PATCH updates.
     """
 
     property_id: UUID | None = None
@@ -56,7 +58,7 @@ class PropertyAmenityUpdate(BaseModel):
 
 class PropertyAmenityResponse(BaseModel):
     """
-    Property amenity mapping response.
+    Property amenity mapping returned to the client.
     """
 
     id: UUID
@@ -65,9 +67,9 @@ class PropertyAmenityResponse(BaseModel):
 
     amenity_id: UUID
 
-    created_by: UUID | None = None
+    created_by: str | None = None
 
-    updated_by: UUID | None = None
+    updated_by: str | None = None
 
     created_at: datetime
 

@@ -77,5 +77,4 @@ class Permission(BaseTable):
     role_permissions: Mapped[list["RolePermission"]] = relationship(
         back_populates="permission",
         cascade="all, delete-orphan",
-        lazy="select",
     )

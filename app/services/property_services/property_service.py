@@ -12,6 +12,7 @@ from fastapi import (
     HTTPException,
     status,
 )
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # ============================================================
@@ -22,8 +23,13 @@ from app.common.enums.property_enums.property_status import (
     PropertyStatus,
 )
 
+from app.common.enums.user_enums.role_name import (
+    RoleName,
+)
+
 from app.models.property_models.address import Address
 from app.models.property_models.property import Property
+from app.models.users_models.users import User
 
 from app.repositories.property_repositories.property_repository import (
     PropertyRepository,
@@ -40,11 +46,15 @@ from app.schema.property_schema.property_schema import (
 # ============================================================
 
 class PropertyService:
+    """
+    Business logic for Property Management.
+    """
 
     def __init__(
         self,
         db: AsyncSession,
     ):
+        self.db = db
         self.repo = PropertyRepository(db)
 
     # ========================================================
@@ -54,7 +64,14 @@ class PropertyService:
     async def create_property(
         self,
         property_data: PropertyCreate,
+        current_user: User,
     ) -> Property:
+
+        if current_user.role.name != RoleName.PROPERTY_OWNER.value:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only property owners can create properties.",
+            )
 
         address = Address(
             address_line_1=property_data.address_line_1,
@@ -63,13 +80,12 @@ class PropertyService:
             state=property_data.state,
             country=property_data.country,
             postal_code=property_data.postal_code,
-            created_by=str(property_data.owner_id),
-            updated_by=str(property_data.owner_id),
+            created_by=current_user.email,
+            updated_by=current_user.email,
         )
-        
 
         property_obj = Property(
-            owner_id=property_data.owner_id,
+            owner_id=current_user.id,
             property_name=property_data.property_name,
             description=property_data.description,
             property_type=property_data.property_type,
@@ -85,8 +101,8 @@ class PropertyService:
             check_out_time=property_data.check_out_time,
             status=PropertyStatus.PENDING,
             is_verified=False,
-            created_by=str(property_data.owner_id),
-            updated_by=str(property_data.owner_id),
+            created_by=current_user.email,
+            updated_by=current_user.email,
         )
 
         return await self.repo.create(
@@ -100,11 +116,11 @@ class PropertyService:
 
     async def get_my_properties(
         self,
-        owner_id: UUID,
+        current_user: User,
     ) -> list[Property]:
 
         return await self.repo.get_by_owner_id(
-            owner_id,
+            current_user.id,
         )
 
     # ========================================================
@@ -114,11 +130,19 @@ class PropertyService:
     async def get_property_details(
         self,
         property_id: UUID,
+        current_user: User,
     ) -> Property:
 
-        return await self._get_property_or_404(
+        property_obj = await self._get_property_or_404(
             property_id,
         )
+
+        self._validate_property_access(
+            property_obj,
+            current_user,
+        )
+
+        return property_obj
 
     # ========================================================
     # Update Property
@@ -127,18 +151,29 @@ class PropertyService:
     async def update_property(
         self,
         property_id: UUID,
-        owner_id: UUID,
         property_data: PropertyUpdate,
+        current_user: User,
     ) -> Property:
 
         property_obj = await self._get_property_or_404(
             property_id,
         )
 
-        self._validate_property_owner(
+        self._validate_property_access(
             property_obj,
-            owner_id,
+            current_user,
         )
+
+        property_obj.updated_by = current_user.email
+
+        #
+        # Any modification requires re-approval
+        #
+        property_obj.status = PropertyStatus.PENDING
+        property_obj.is_verified = False
+        property_obj.approved_by = None
+        property_obj.approved_at = None
+        property_obj.approval_remarks = None
 
         return await self.repo.update(
             property_obj=property_obj,
@@ -152,16 +187,16 @@ class PropertyService:
     async def archive_property(
         self,
         property_id: UUID,
-        owner_id: UUID,
+        current_user: User,
     ) -> Property:
 
         property_obj = await self._get_property_or_404(
             property_id,
         )
 
-        self._validate_property_owner(
+        self._validate_property_access(
             property_obj,
-            owner_id,
+            current_user,
         )
 
         if property_obj.status == PropertyStatus.ARCHIVED:
@@ -170,7 +205,52 @@ class PropertyService:
                 detail="Property is already archived.",
             )
 
+        property_obj.updated_by = current_user.email
+
         return await self.repo.archive(
+            property_obj,
+        )
+
+    # ========================================================
+    # Submit Property For Review
+    # ========================================================
+
+    async def submit_property_for_review(
+        self,
+        property_id: UUID,
+        current_user: User,
+    ) -> Property:
+
+        property_obj = await self._get_property_or_404(
+            property_id,
+        )
+
+        self._validate_property_access(
+            property_obj,
+            current_user,
+        )
+
+        if property_obj.status == PropertyStatus.ARCHIVED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Archived properties cannot be submitted.",
+            )
+
+        if property_obj.status == PropertyStatus.PENDING:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Property is already awaiting approval.",
+            )
+
+        if property_obj.status == PropertyStatus.APPROVED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Property is already approved.",
+            )
+
+        property_obj.updated_by = current_user.email
+
+        return await self.repo.submit_for_review(
             property_obj,
         )
 
@@ -195,13 +275,27 @@ class PropertyService:
 
         return property_obj
 
-    def _validate_property_owner(
+    # ========================================================
+    # Ownership Validation
+    # ========================================================
+
+    def _validate_property_access(
         self,
         property_obj: Property,
-        owner_id: UUID,
+        current_user: User,
     ) -> None:
+        """
+        Ensure the authenticated property owner owns
+        the requested property.
+        """
 
-        if property_obj.owner_id != owner_id:
+        if current_user.role.name != RoleName.PROPERTY_OWNER.value:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only property owners can perform this action.",
+            )
+
+        if property_obj.owner_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You are not authorized to access this property.",
@@ -209,60 +303,64 @@ class PropertyService:
 
 
     # ========================================================
-    # Submit Property For Review
+    # Approve Property
     # ========================================================
 
-    async def submit_property_for_review(
+    async def approve_property(
         self,
         property_id: UUID,
-        owner_id: UUID,
+        remarks: str | None,
+        current_user: User,
     ) -> Property:
 
         property_obj = await self._get_property_or_404(
             property_id,
         )
 
-        self._validate_property_owner(
-            property_obj,
-            owner_id,
-        )
-
-        if property_obj.status == PropertyStatus.ARCHIVED:
+        if property_obj.status != PropertyStatus.PENDING:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Archived properties cannot be submitted for review.",
+                detail="Only pending properties can be approved.",
             )
 
-        return await self.repo.submit_for_review(
-            property_obj,
+        property_obj.updated_by = current_user.email
+
+        return await self.repo.approve_property(
+            property_obj=property_obj,
+            approved_by=current_user.id,
+            approval_remarks=remarks,
         )
 
-
     # ========================================================
-    # Delete Draft Property
+    # Reject Property
     # ========================================================
 
-    async def delete_draft_property(
+    async def reject_property(
         self,
         property_id: UUID,
-        owner_id: UUID,
-    ) -> None:
+        remarks: str,
+        current_user: User,
+    ) -> Property:
 
+        if not remarks.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Rejection remarks are required.",
+            )
         property_obj = await self._get_property_or_404(
             property_id,
         )
 
-        self._validate_property_owner(
-            property_obj,
-            owner_id,
-        )
-
-        if property_obj.status != PropertyStatus.DRAFT:
+        if property_obj.status != PropertyStatus.PENDING:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Only draft properties can be deleted.",
+                detail="Only pending properties can be rejected.",
             )
 
-        await self.repo.delete(
-            property_obj,
+        property_obj.updated_by = current_user.email
+
+        await self.repo.reject_property(
+            property_obj=property_obj,
+            rejected_by=current_user.id,
+            approval_remarks=remarks,
         )

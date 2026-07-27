@@ -11,6 +11,7 @@ from uuid import UUID
 from fastapi import (
     APIRouter,
     Depends,
+    Response,
     status,
 )
 
@@ -22,10 +23,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.session import get_db
 
+from app.dependencies.auth import (
+    get_current_user,
+    require_permission,
+)
+
+from app.models.users_models.users import User
+
 from app.schema.property_schema.property_schema import (
     PropertyCreate,
     PropertyResponse,
     PropertyUpdate,
+)
+
+from app.schema.property_schema.property_review_schema import (
+    PropertyApproveRequest,
+    PropertyRejectRequest,
 )
 
 from app.services.property_services.property_service import (
@@ -46,19 +59,22 @@ router = APIRouter(
 # ============================================================
 
 @router.post(
-    "/create",
+    "",
     response_model=PropertyResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_property(
     request: PropertyCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_permission("property.create"),
+    ),
 ):
-
     service = PropertyService(db)
 
     return await service.create_property(
-        request,
+        property_data=request,
+        current_user=current_user,
     )
 
 
@@ -67,19 +83,19 @@ async def create_property(
 # ============================================================
 
 @router.get(
-    "/owner/{owner_id}",
+    "/my",
     response_model=list[PropertyResponse],
-    status_code=status.HTTP_200_OK,
 )
 async def get_my_properties(
-    owner_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_permission("property.view"),
+    ),
 ):
-
     service = PropertyService(db)
 
     return await service.get_my_properties(
-        owner_id,
+        current_user=current_user,
     )
 
 
@@ -90,17 +106,19 @@ async def get_my_properties(
 @router.get(
     "/{property_id}",
     response_model=PropertyResponse,
-    status_code=status.HTTP_200_OK,
 )
 async def get_property_details(
     property_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_permission("property.view"),
+    ),
 ):
-
     service = PropertyService(db)
 
     return await service.get_property_details(
-        property_id,
+        property_id=property_id,
+        current_user=current_user,
     )
 
 
@@ -111,21 +129,21 @@ async def get_property_details(
 @router.patch(
     "/{property_id}",
     response_model=PropertyResponse,
-    status_code=status.HTTP_200_OK,
 )
 async def update_property(
     property_id: UUID,
-    owner_id: UUID,      # TODO: Replace with current_user.id after JWT integration
     request: PropertyUpdate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_permission("property.update"),
+    ),
 ):
-
     service = PropertyService(db)
 
     return await service.update_property(
         property_id=property_id,
-        owner_id=owner_id,
         property_data=request,
+        current_user=current_user,
     )
 
 
@@ -136,19 +154,19 @@ async def update_property(
 @router.patch(
     "/{property_id}/archive",
     response_model=PropertyResponse,
-    status_code=status.HTTP_200_OK,
 )
 async def archive_property(
     property_id: UUID,
-    owner_id: UUID,      # TODO: Replace with current_user.id after JWT integration
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_permission("property.update"),
+    ),
 ):
-
     service = PropertyService(db)
 
     return await service.archive_property(
         property_id=property_id,
-        owner_id=owner_id,
+        current_user=current_user,
     )
 
 
@@ -159,39 +177,94 @@ async def archive_property(
 @router.patch(
     "/{property_id}/submit-review",
     response_model=PropertyResponse,
-    status_code=status.HTTP_200_OK,
 )
-async def submit_property_for_review(
+async def submit_property(
     property_id: UUID,
-    owner_id: UUID,      # TODO: Replace with current_user.id after JWT integration
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_permission("property.update"),
+    ),
 ):
-
     service = PropertyService(db)
 
     return await service.submit_property_for_review(
         property_id=property_id,
-        owner_id=owner_id,
+        current_user=current_user,
     )
 
 
 # ============================================================
-# Delete Draft Property
+# Approve Property
+# ============================================================
+
+@router.patch(
+    "/{property_id}/approve",
+    response_model=PropertyResponse,
+)
+async def approve_property(
+    property_id: UUID,
+    request: PropertyApproveRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_permission("property.approve"),
+    ),
+):
+    service = PropertyService(db)
+
+    return await service.approve_property(
+        property_id=property_id,
+        remarks=request.approval_remarks,
+        current_user=current_user,
+    )
+
+
+# ============================================================
+# Reject Property
+# ============================================================
+
+@router.patch(
+    "/{property_id}/reject",
+    response_model=PropertyResponse,
+)
+async def reject_property(
+    property_id: UUID,
+    request: PropertyRejectRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_permission("property.reject"),
+    ),
+):
+    service = PropertyService(db)
+
+    return await service.reject_property(
+        property_id=property_id,
+        remarks=request.approval_remarks,
+        current_user=current_user,
+    )
+
+
+# ============================================================
+# Delete Property (Soft Delete)
 # ============================================================
 
 @router.delete(
     "/{property_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_draft_property(
+async def delete_property(
     property_id: UUID,
-    owner_id: UUID,      # TODO: Replace with current_user.id after JWT integration
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(
+        require_permission("property.delete"),
+    ),
 ):
-
     service = PropertyService(db)
 
-    await service.delete_draft_property(
+    await service.delete_property(
         property_id=property_id,
-        owner_id=owner_id,
+        current_user=current_user,
+    )
+
+    return Response(
+        status_code=status.HTTP_204_NO_CONTENT,
     )

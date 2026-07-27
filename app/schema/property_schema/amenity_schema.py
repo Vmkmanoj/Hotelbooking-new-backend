@@ -29,12 +29,12 @@ from app.common.enums.property_enums.amenity_category import (
 
 class AmenityBase(BaseModel):
     """
-    Base schema for property amenities.
+    Base schema shared by Amenity Create, Update and Response.
     """
 
     name: str = Field(
         min_length=2,
-        max_length=100,
+        max_length=255,
     )
 
     description: str | None = Field(
@@ -46,10 +46,13 @@ class AmenityBase(BaseModel):
 
 
 # ============================================================
-# Create
+# Amenity Create
 # ============================================================
 
 class AmenityCreate(AmenityBase):
+    """
+    Request schema for creating a new amenity.
+    """
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -57,15 +60,20 @@ class AmenityCreate(AmenityBase):
 
 
 # ============================================================
-# Update
+# Amenity Update
 # ============================================================
 
 class AmenityUpdate(BaseModel):
+    """
+    Request schema for updating an amenity.
+
+    All fields are optional to support PATCH updates.
+    """
 
     name: str | None = Field(
         default=None,
         min_length=2,
-        max_length=100,
+        max_length=255,
     )
 
     description: str | None = Field(
@@ -81,16 +89,19 @@ class AmenityUpdate(BaseModel):
 
 
 # ============================================================
-# Response
+# Amenity Response
 # ============================================================
 
 class AmenityResponse(AmenityBase):
+    """
+    Amenity response returned to the client.
+    """
 
     id: UUID
 
-    created_by: UUID | None = None
+    created_by: str | None = None
 
-    updated_by: UUID | None = None
+    updated_by: str | None = None
 
     created_at: datetime
 

@@ -36,9 +36,7 @@ from app.api.property_router.property.property_router import (
     router as property_router,
 )
 
-from app.api.property_router.address.address_router import (
-    router as address_router,
-)
+
 
 from app.api.property_router.amenities.amenities_router import (
     router as amenity_router,
@@ -48,7 +46,7 @@ from app.api.property_router.propertyimages.property_images_router import (
     router as property_image_router,
 )
 
-from app.api.property_router.propertyamenities.propertyamenities_router import (
+from app.api.property_router.property_amenities.property_amenities_router import (
     router as property_amenity_router,
 )
 
@@ -88,7 +86,6 @@ api_router.include_router(auth_router)
 # ============================================================
 
 api_router.include_router(property_router)
-api_router.include_router(address_router)
 api_router.include_router(amenity_router)
 api_router.include_router(property_image_router)
 api_router.include_router(property_amenity_router)

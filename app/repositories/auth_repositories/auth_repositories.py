@@ -11,16 +11,16 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from sqlalchemy.orm import selectinload
 # ============================================================
 # Local Imports
 # ============================================================
 
+from app.common.enums.user_enums.role_name import RoleName
 from app.models.permissions_models.permissions import Permission
 from app.models.permissions_models.roles import Role
 from app.models.permissions_models.roles_permission import RolePermission
 from app.models.users_models.users import User
-from app.common.enums.user_enums.role_name import RoleName
 
 
 # ============================================================
@@ -46,39 +46,20 @@ class AuthRepository:
         self,
         user_id: UUID,
     ) -> User | None:
-        """
-        Retrieve a user by ID.
-        """
 
         result = await self.db.execute(
-            select(User).where(
-                User.id == user_id,                
+            select(User)
+            .options(
+                selectinload(User.role),
+            )
+            .where(
+                User.id == user_id,
             )
         )
 
         return result.scalar_one_or_none()
 
-
-    # async def get_by_email_id(
-    #     self,
-    #     id: str,
-    # ) -> User | None:
-    #     """
-    #     Retrieve a user by email id.
-    #     """
-
-    #     result = await self.db.execute(
-    #         select(User).
-    #         where(
-    #             User.id == id,
-    #         )
-    #     )
-
-    
-    #     return result.scalar_one_or_none()
-
-
-    async def get_user_by_email(
+    async def get_by_email(
         self,
         email: str,
     ) -> User | None:
@@ -115,7 +96,7 @@ class AuthRepository:
         user: User,
     ) -> None:
         """
-        Update user's last login timestamp.
+        Update the user's last login timestamp.
         """
 
         user.last_login_at = datetime.now(
@@ -128,12 +109,12 @@ class AuthRepository:
     # Role Queries
     # ========================================================
 
-    async def get_user_role(
+    async def get_role_by_id(
         self,
         role_id: UUID,
     ) -> Role | None:
         """
-        Retrieve role by ID.
+        Retrieve a role by ID.
         """
 
         result = await self.db.execute(
@@ -149,7 +130,7 @@ class AuthRepository:
         role_name: RoleName,
     ) -> Role | None:
         """
-        Retrieve role by name.
+        Retrieve a role by name.
         """
 
         result = await self.db.execute(
@@ -183,6 +164,4 @@ class AuthRepository:
             )
         )
 
-        return list(
-            result.scalars().all(),
-        )
+        return list(result.scalars().all())

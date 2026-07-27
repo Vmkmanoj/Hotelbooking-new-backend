@@ -1,8 +1,4 @@
 # ============================================================
-# Standard Library
-# ============================================================
-
-# ============================================================
 # Third Party
 # ============================================================
 
@@ -29,8 +25,6 @@ from app.schema.auth_schema.login import (
     LoginUser,
 )
 
-
-
 from app.common.enums.user_enums.role_name import RoleName
 from app.common.enums.user_enums.user_status import UserStatus
 
@@ -48,6 +42,9 @@ from app.core.password import (
 # ============================================================
 
 class AuthService:
+    """
+    Handles all authentication related business logic.
+    """
 
     def __init__(
         self,
@@ -64,8 +61,11 @@ class AuthService:
         self,
         request: LoginRequest,
     ) -> LoginResponse:
+        """
+        Authenticate a user and generate an access token.
+        """
 
-        user = await self.repo.get_user_by_email(
+        user = await self.repo.get_by_email(
             request.email,
         )
 
@@ -73,6 +73,12 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password.",
+            )
+
+        if user.user_status != UserStatus.ACTIVE:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User account is inactive.",
             )
 
         if not verify_password(
@@ -84,16 +90,21 @@ class AuthService:
                 detail="Invalid email or password.",
             )
 
-        role = await self.repo.get_user_role(
+        role = await self.repo.get_role_by_id(
             user.role_id,
         )
 
+        if not role:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Role not found.",
+            )
 
         access_token = create_access_token(
             {
                 "sub": str(user.id),
                 "email": user.email,
-                "role": role.name
+                "role": role.name,
             }
         )
 
@@ -104,11 +115,11 @@ class AuthService:
         return LoginResponse(
             success=True,
             message="Login successful.",
-            role=role.name,
             access_token=access_token,
-            token_type="Bearer",
+            token_type="bearer",
+            role=role.name,
             user=LoginUser(
-                id=str(user.id),
+                id=user.id,
                 email=user.email,
                 first_name=user.first_name,
                 last_name=user.last_name,
@@ -124,6 +135,9 @@ class AuthService:
         self,
         request: PropertyRegister,
     ) -> RegisterResponse:
+        """
+        Register a new property owner.
+        """
 
         return await self._register_user(
             request=request,
@@ -142,11 +156,14 @@ class AuthService:
         self,
         request: CustomerRegister,
     ) -> RegisterResponse:
+        """
+        Register a new customer.
+        """
 
         return await self._register_user(
             request=request,
             role_name=RoleName.CUSTOMER,
-            first_name=request.userName,
+            first_name=request.first_name,
         )
 
     # ========================================================
@@ -155,21 +172,24 @@ class AuthService:
 
     async def _register_user(
         self,
-        request,
+        request: CustomerRegister | PropertyRegister,
         role_name: RoleName,
         first_name: str,
         last_name: str | None = None,
         phone: str | None = None,
         avatar_url: str | None = None,
     ) -> RegisterResponse:
+        """
+        Shared registration logic for all user types.
+        """
 
-        existing_user = await self.repo.get_user_by_email(
+        existing_user = await self.repo.get_by_email(
             request.email,
         )
 
         if existing_user:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_409_CONFLICT,
                 detail="Email already registered.",
             )
 
@@ -180,7 +200,7 @@ class AuthService:
         if not role:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"{role_name} role not found.",
+                detail=f"{role_name.value.replace('_', ' ').title()} role not found.",
             )
 
         user = User(

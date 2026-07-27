@@ -2,12 +2,15 @@
 # Third Party
 # ============================================================
 
+from uuid import UUID
 from pydantic import (
     BaseModel,
     ConfigDict,
     EmailStr,
     Field,
 )
+
+from app.common.enums.user_enums.role_name import RoleName
 
 
 # ============================================================
@@ -36,7 +39,7 @@ class LoginUser(BaseModel):
     Logged-in user details.
     """
 
-    id: str
+    id: UUID
 
     email: EmailStr
 
@@ -44,7 +47,7 @@ class LoginUser(BaseModel):
 
     last_name: str | None = None
 
-    role: str
+    role: RoleName
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -68,7 +71,7 @@ class LoginResponse(BaseModel):
 
     token_type: str = "bearer"
 
-    role: str | None = None
+    role: RoleName | None = None
 
     user: LoginUser | None = None
 

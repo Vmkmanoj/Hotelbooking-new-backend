@@ -67,7 +67,7 @@ class RoomAmenityRepository:
         amenity_id: UUID,
     ) -> RoomAmenity | None:
         """
-        Retrieve a specific room amenity mapping.
+        Retrieve a room amenity mapping.
         """
         try:
             result = await self.db.execute(
@@ -78,30 +78,6 @@ class RoomAmenityRepository:
             )
 
             return result.scalar_one_or_none()
-
-        except SQLAlchemyError:
-            raise
-
-    # ========================================================
-    # Get Amenities By Room Type
-    # ========================================================
-
-    async def get_by_room_type(
-        self,
-        room_type_id: UUID,
-    ) -> list[RoomAmenity]:
-        """
-        Retrieve all amenities assigned to a room type.
-        """
-        try:
-            result = await self.db.execute(
-                select(RoomAmenity)
-                .where(
-                    RoomAmenity.room_type_id == room_type_id,
-                )
-            )
-
-            return result.scalars().all()
 
         except SQLAlchemyError:
             raise
@@ -127,6 +103,30 @@ class RoomAmenityRepository:
             )
 
             return result.scalar_one_or_none() is not None
+
+        except SQLAlchemyError:
+            raise
+
+    # ========================================================
+    # Get Amenities By Room Type
+    # ========================================================
+
+    async def get_by_room_type(
+        self,
+        room_type_id: UUID,
+    ) -> list[RoomAmenity]:
+        """
+        Retrieve all amenities assigned to a room type.
+        """
+        try:
+            result = await self.db.execute(
+                select(RoomAmenity)
+                .where(
+                    RoomAmenity.room_type_id == room_type_id,
+                )
+            )
+
+            return result.scalars().all()
 
         except SQLAlchemyError:
             raise
