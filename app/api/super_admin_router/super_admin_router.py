@@ -30,6 +30,8 @@ from app.schema.super_admin_schema.super_admin_property_schema import (
     SuspendPropertyRequest,
 )
 
+from app.schema.user_schema.user import getUser
+
 from app.schema.super_admin_schema.super_admin_schema import (
     ApprovePropertyRequest,
     MessageResponse,
@@ -220,13 +222,22 @@ async def getAllPropertyOnwers(
     return await service.getAllPropertyOwners()
 
 
-@router.get("/property/all/customers")
+@router.get("/property/all/customers",response_model=list[getUser])
 async def getAllCustomers(
     service: SuperAdminPropertyService = Depends(
         get_super_admin_service,
     ),
+    
 ):
     return await service.getAllCustomers()
+
+@router.get("/property/all")
+async def getAllProperty(
+    service : SuperAdminPropertyService = Depends(
+        get_super_admin_service
+    )
+):
+    return await service.getAllProperty()
 
 
 # ============================================================
