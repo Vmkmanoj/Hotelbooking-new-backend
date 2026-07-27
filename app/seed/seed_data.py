@@ -1,39 +1,12 @@
-<<<<<<< Updated upstream
 import asyncio
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-=======
-# ============================================================
-# Standard Library
-# ============================================================
-
-import asyncio
-
-# ============================================================
-# Third Party
-# ============================================================
-
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-# ============================================================
-# Local Imports
-# ============================================================
-
->>>>>>> Stashed changes
 from app.database import AsyncSessionLocal
 from app.models.permissions_models.permissions import Permission
 from app.models.permissions_models.roles import Role
 from app.models.permissions_models.roles_permission import RolePermission
 
-<<<<<<< Updated upstream
-=======
-# ============================================================
-# Initial Seed Data
-# ============================================================
-
->>>>>>> Stashed changes
 ROLES = [
     ("SUPER_ADMIN", "Platform Owner"),
     ("PROPERTY_OWNER", "Hotel Owner"),
@@ -133,19 +106,12 @@ async def seed_database(db: AsyncSession) -> None:
                 permission = existing_permissions[permission_name]
                 link_key = (role.id, permission.id)
                 if link_key not in existing_links:
-<<<<<<< Updated upstream
-                    db.add(RolePermission(
-                        role_id=role.id,
-                        permission_id=permission.id,
-                    ))
-=======
                     db.add(
                         RolePermission(
                             role_id=role.id,
                             permission_id=permission.id,
                         )
                     )
->>>>>>> Stashed changes
                     existing_links.add(link_key)
 
         await db.commit()
@@ -154,11 +120,7 @@ async def seed_database(db: AsyncSession) -> None:
         raise
 
 
-<<<<<<< Updated upstream
-async def main():
-=======
 async def main() -> None:
->>>>>>> Stashed changes
     async with AsyncSessionLocal() as db:
         await seed_database(db)
         print("Database seeded successfully!")
