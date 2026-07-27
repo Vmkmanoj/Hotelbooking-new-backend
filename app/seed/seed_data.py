@@ -1,11 +1,28 @@
+# ============================================================
+# Standard Library
+# ============================================================
+
 import asyncio
+
+# ============================================================
+# Third Party
+# ============================================================
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+# ============================================================
+# Local Imports
+# ============================================================
 
 from app.database import AsyncSessionLocal
 from app.models.permissions_models.permissions import Permission
 from app.models.permissions_models.roles import Role
 from app.models.permissions_models.roles_permission import RolePermission
+
+# ============================================================
+# Initial Seed Data
+# ============================================================
 
 ROLES = [
     ("SUPER_ADMIN", "Platform Owner"),
