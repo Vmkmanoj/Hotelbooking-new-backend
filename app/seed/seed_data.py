@@ -1,10 +1,28 @@
+# ============================================================
+# Standard Library
+# ============================================================
+
+import asyncio
+
+# ============================================================
+# Third Party
+# ============================================================
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+# ============================================================
+# Local Imports
+# ============================================================
+
+from app.database import AsyncSessionLocal
 from app.models.permissions_models.permissions import Permission
 from app.models.permissions_models.roles import Role
 from app.models.permissions_models.roles_permission import RolePermission
 
+# ============================================================
+# Initial Seed Data
+# ============================================================
 
 ROLES = [
     ("SUPER_ADMIN", "Platform Owner"),
@@ -38,7 +56,7 @@ PERMISSIONS = [
 ]
 
 ROLE_PERMISSIONS = {
-    "SUPER_ADMIN": None,  # None means every permission.
+    "SUPER_ADMIN": None,  # None means all permissions.
     "PROPERTY_OWNER": {
         "property.create", "property.update", "property.view",
         "room.create", "room.update", "room.delete", "room.view",
@@ -51,10 +69,16 @@ ROLE_PERMISSIONS = {
     },
 }
 
+# ============================================================
+# Seed Logic
+# ============================================================
 
 async def seed_database(db: AsyncSession) -> None:
-    """Create the default roles, permissions, and role mappings if absent."""
+    """
+    Create the default roles, permissions, and role mappings if absent.
+    """
     try:
+        # Seed Roles
         existing_roles = {
             role.name: role
             for role in (await db.execute(select(Role))).scalars()
@@ -65,41 +89,59 @@ async def seed_database(db: AsyncSession) -> None:
                 db.add(role)
                 existing_roles[name] = role
 
+        # Seed Permissions
         existing_permissions = {
             permission.name: permission
             for permission in (await db.execute(select(Permission))).scalars()
         }
-        for name, modules, description in PERMISSIONS:
+        for name, module, description in PERMISSIONS:
             if name not in existing_permissions:
                 permission = Permission(
                     name=name,
-                    modules=modules,
+                    module=module,
                     description=description,
                 )
                 db.add(permission)
                 existing_permissions[name] = permission
 
-        # Assign IDs to newly-created rows before creating role-permission links.
+        # Flush to generate IDs for new roles and permissions before mapping
         await db.flush()
 
+        # Seed Role-Permission Links
         existing_links = {
-            (link.rolesId, link.permission_id)
+            (link.role_id, link.permission_id)
             for link in (await db.execute(select(RolePermission))).scalars()
         }
         for role_name, permission_names in ROLE_PERMISSIONS.items():
             role = existing_roles[role_name]
-            names = existing_permissions.keys() if permission_names is None else permission_names
+            names = (
+                existing_permissions.keys()
+                if permission_names is None
+                else permission_names
+            )
             for permission_name in names:
                 permission = existing_permissions[permission_name]
                 link_key = (role.id, permission.id)
                 if link_key not in existing_links:
-                    db.add(RolePermission(
-                        rolesId=role.id,
-                        permission_id=permission.id,
-                    ))
+                    db.add(
+                        RolePermission(
+                            role_id=role.id,
+                            permission_id=permission.id,
+                        )
+                    )
                     existing_links.add(link_key)
 
         await db.commit()
     except Exception:
         await db.rollback()
         raise
+
+
+async def main() -> None:
+    async with AsyncSessionLocal() as db:
+        await seed_database(db)
+        print("Database seeded successfully!")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
